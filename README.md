@@ -37,7 +37,7 @@
  ```
 
  ```python
-    python recognize.py path
+    python acrcloud_scan_files_python.py path
  ```
   Example:
  ```python
