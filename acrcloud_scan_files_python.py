@@ -44,13 +44,10 @@ def recognize_music(filename):
     while True:
         current_time = time.strftime('%H:%M:%S', time.gmtime(i))
         res_data = re.recognize_by_file(filename, i)
-        print res_data
-        print current_time
         if res_data == -1:
             retry -= 1
         if retry > 0:
             try:
-                print res_data
                 ret_dict = json.loads(res_data)
             except:
                 ret_dict['status']['msg'] = 'Error'
@@ -103,6 +100,7 @@ def recognize_music(filename):
                 res = (current_time, title, artists, album,
                        acrid, label, isrc, dezzer, spotify,
                        itunes, custom_files_title, audio_id)
+                print current_time, res
                 result.append(res)
 
             i += step
