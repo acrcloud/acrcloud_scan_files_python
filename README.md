@@ -14,11 +14,6 @@
  Open your Terminal then cd to the script directory.
  
  ```
-    source venv/bin/activate
- ```
- Or you can run 
- 
- ```
     pip install -r requirements.txt
  ```
 
