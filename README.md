@@ -16,6 +16,14 @@
  ```
     pip install -r requirements.txt
  ```
+## Choose your lib
+ This step is very important.
+ if your system is linux,please click [here](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/linux/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true) to download lib
+ if your system is osx, please click [here](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/mac/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true) to doanload lib
+ 
+ then copy the "acrcloud_extr_tool.so" file to acrcloudpysdk to recover the original file 
+ 
+ 
 
 ## Usage: 
  
@@ -42,3 +50,4 @@
 Default is scan folder where this script in.
 
 The results are saved in the folder where this script in.
+
