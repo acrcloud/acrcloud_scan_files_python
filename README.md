@@ -23,7 +23,7 @@
  
  if your system is osx, please click [here](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/mac/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true) to download the  lib
  
- Then, copy the "acrcloud_extr_tool.so" file to acrcloudpysdk to recover the original file 
+ Then, copy the "acrcloud_extr_tool.so" file to acrcloudpysdk to replace the original file 
  
  
 
