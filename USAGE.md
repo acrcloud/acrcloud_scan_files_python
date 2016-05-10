@@ -17,9 +17,9 @@ Change the config.json's contents,fill in host,access_key and access_secret
 
 Click launchpad then open terminal
 
-![](https://github.com/acrcloud/acrcloud_scan_files_python/raw/master/img/terminal.png)
-
 ![](https://github.com/acrcloud/acrcloud_scan_files_python/raw/master/img/launchpad.png)
+
+![](https://github.com/acrcloud/acrcloud_scan_files_python/raw/master/img/terminal.png)
 
 
 
