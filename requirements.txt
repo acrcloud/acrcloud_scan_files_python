@@ -1,3 +1,2 @@
-backports.csv==1.0.1
-eyeD3==0.7.9
-requests==2.10.0
+backports.csv
+requests

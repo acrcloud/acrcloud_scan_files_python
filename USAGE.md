@@ -10,6 +10,11 @@ If download success,unzip the "acrcloud_scan_files_python-master.zip" to Desktop
 
 ![](https://github.com/acrcloud/acrcloud_scan_files_python/raw/master/img/desktop.png)
 
+
+Change the config.json's contents,fill in host,access_key and access_secret
+![](https://github.com/acrcloud/acrcloud_scan_files_python/raw/master/img/changejson.png)
+
+
 Click launchpad then open terminal
 
 ![](https://github.com/acrcloud/acrcloud_scan_files_python/raw/master/img/terminal.png)
