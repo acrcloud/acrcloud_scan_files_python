@@ -23,7 +23,6 @@ def get_tracks_artists(artists):
 
 
 def recognize_music(filename):
-    global ret_dict
     with codecs.open('config.json', 'r') as f:
         json_config = json.loads(f.read())
         host = json_config['host']
@@ -49,69 +48,77 @@ def recognize_music(filename):
         if retry > 0:
             try:
                 ret_dict = json.loads(res_data)
+                code = ret_dict['status']['code']
+                if code == 0:
+                    metadata = ret_dict['metadata']
+                    try:
+                        title = metadata['music'][0]['title']
+                    except:
+                        title = ''
+                    try:
+                        isrc = metadata['music'][0]['external_ids']['isrc']
+                    except:
+                        isrc = ''
+                    try:
+                        acrid = metadata['music'][0]['acrid']
+                    except:
+                        acrid = ''
+                    try:
+                        label = metadata['music'][0]['label']
+                    except:
+                        label = ''
+                    try:
+                        album = metadata['music'][0]['album']['name']
+                    except:
+                        album = ''
+                    try:
+                        artists = get_tracks_artists(metadata['music'][0]['artists'])
+                    except:
+                        artists = ''
+                    try:
+                        dezzer = str(metadata['music'][0]['external_metadata']['deezer']['track']['id'])
+                    except:
+                        dezzer = ''
+                    try:
+                        spotify = str(metadata['music'][0]['external_metadata']['spotify']['track']['id'])
+                    except:
+                        spotify = ''
+                    try:
+                        itunes = str(metadata['music'][0]['external_metadata']['itunes']['track']['id'])
+                    except:
+                        itunes = ''
+                    try:
+                        custom_files_title = metadata['custom_files'][0]['title']
+                    except:
+                        custom_files_title = ''
+                    try:
+                        audio_id = metadata['custom_files'][0]['audio_id']
+                    except:
+                        audio_id = ''
+                    res = (current_time, title, artists, album,
+                           acrid, label, isrc, dezzer, spotify,
+                           itunes, custom_files_title, audio_id)
+                    print current_time, res
+                    result.append(res)
+                elif code == 1001:
+                    print "No Result"
+                elif code == 3001:
+                    print 'Missing/Invalid Access Key'
+                    break
+                elif code == 3003:
+                    print 'Limit exceeded'
+                    return result
             except:
-                ret_dict['status']['msg'] = 'Error'
-            if ret_dict['status']['msg'] == 'Success':
-                metadata = ret_dict['metadata']
-                try:
-                    title = metadata['music'][0]['title']
-                except:
-                    title = ''
-                try:
-                    isrc = metadata['music'][0]['external_ids']['isrc']
-                except:
-                    isrc = ''
-                try:
-                    acrid = metadata['music'][0]['acrid']
-                except:
-                    acrid = ''
-                try:
-                    label = metadata['music'][0]['label']
-                except:
-                    label = ''
-                try:
-                    album = metadata['music'][0]['album']['name']
-                except:
-                    album = ''
-                try:
-                    artists = get_tracks_artists(metadata['music'][0]['artists'])
-                except:
-                    artists = ''
-                try:
-                    dezzer = str(metadata['music'][0]['external_metadata']['deezer']['track']['id'])
-                except:
-                    dezzer = ''
-                try:
-                    spotify = str(metadata['music'][0]['external_metadata']['spotify']['track']['id'])
-                except:
-                    spotify = ''
-                try:
-                    itunes = str(metadata['music'][0]['external_metadata']['itunes']['track']['id'])
-                except:
-                    itunes = ''
-                try:
-                    custom_files_title = metadata['custom_files'][0]['title']
-                except:
-                    custom_files_title = ''
-                try:
-                    audio_id = metadata['custom_files'][0]['audio_id']
-                except:
-                    audio_id = ''
-                res = (current_time, title, artists, album,
-                       acrid, label, isrc, dezzer, spotify,
-                       itunes, custom_files_title, audio_id)
-                print current_time, res
-                result.append(res)
-
-            i += step
+                pass
         else:
-            return result
-
+            break
+        i += step
     return result
 
 
 def save_results(target):
     try:
+        print target
         results = recognize_music(target)
         filename = 'result-' + target.split('/')[-1].strip() + '.csv'
         try:
@@ -128,19 +135,25 @@ def save_results(target):
         pass
 
 
-def main():
+def main(path):
     p = Pool(cpu_count())
-    path = os.getcwd()
     file_list = os.listdir(path)
-    p.map(save_results, file_list)
+    files = []
+    for file in file_list:
+        filepath = path + '/' + file
+        files.append(filepath)
+    p.map(save_results, files)
     p.close()
     p.join()
 
 
 if __name__ == '__main__':
-    if 1 != 1:
-        print '[-] Usage: python recognize.py'
-        print '[-] Put this python script to the file you want to recognize'
-        sys.exit()
+    if len(sys.argv) <= 1:
+        print '[-] Usage: acrcloud_scan_files_python.py targetpath'
+        print '[-] Example: python acrcloud_scan_files_python.py ~/music'
+        print '[-] Default is scan folder where this script in.'
+        path = os.getcwd()
+        main(path)
     else:
-        main()
+        path = sys.argv[1]
+        main(path)
