@@ -22,7 +22,7 @@ import acrcloud_extr_tool
 '''
 Copyright 2015 ACRCloud Recognizer v1.0.0
 
-This module can recognize ACRCloud by most of audio/video file. 
+This module can recognize ACRCloud by most of audio/video file.
         Audio: mp3, wav, m4a, flac, aac, amr, ape, ogg ...
         Video: mp4, mkv, wmv, flv, ts, avi ...
 
@@ -80,7 +80,7 @@ class ACRCloudRecognizer:
         except Exception, e:
             print 'post_multipart error'
         return None
-        
+
     def encode_multipart_formdata(self, fields, files):
         try:
             boundary = mimetools.choose_boundary()
@@ -113,17 +113,17 @@ class ACRCloudRecognizer:
         signature_version = "1"
         timestamp = int(time.mktime(datetime.datetime.utcfromtimestamp(time.time()).timetuple()))
         sample_bytes = str(len(query_data))
-        
+
         string_to_sign = http_method+"\n"+http_url_file+"\n"+access_key+"\n"+data_type+"\n"+signature_version+"\n"+str(timestamp)
         sign = base64.b64encode(hmac.new(str(access_secret), str(string_to_sign), digestmod=hashlib.sha1).digest())
-    
-        fields = {'access_key':access_key, 
-                  'sample_bytes':sample_bytes, 
-                  'timestamp':str(timestamp), 
-                  'signature':sign, 
-                  'data_type':data_type, 
+
+        fields = {'access_key':access_key,
+                  'sample_bytes':sample_bytes,
+                  'timestamp':str(timestamp),
+                  'signature':sign,
+                  'data_type':data_type,
                   "signature_version":signature_version}
-        
+
         server_url = 'http://' + host + http_url_file
         res = self.post_multipart(server_url, fields, {"sample" : query_data}, timeout)
         return res
@@ -142,7 +142,7 @@ class ACRCloudRecognizer:
     def recognize_by_file(self, file_path, start_seconds):
         try:
             res = ''
-            fp = acrcloud_extr_tool.create_fingerprint_by_file(file_path, start_seconds, 10, False)
+            fp = acrcloud_extr_tool.create_fingerprint_by_file(file_path, start_seconds, 12, False)
             if not fp:
                 return -1
             res = self.do_recogize(self.host, fp, self.query_type, self.access_key, self.access_secret, self.timeout)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
         'access_secret':'XXXXXXXX',
         'timeout':5
     }
-    
+
     re = ACRCloudRecognizer(config)
     buf = open(sys.argv[1], 'rb').read()
     buft = buf[1024000:192000+1024001]

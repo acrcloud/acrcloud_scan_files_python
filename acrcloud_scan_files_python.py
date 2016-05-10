@@ -7,7 +7,6 @@ import sys
 import json
 from acrcloudpysdk.recognizer import ACRCloudRecognizer
 import time
-import eyed3
 from backports import csv
 from multiprocessing import Pool, cpu_count
 
@@ -25,8 +24,6 @@ def get_tracks_artists(artists):
 
 
 def recognize_music(filename):
-    mp3_file_data = eyed3.load(filename)
-    duration = mp3_file_data.info.time_secs
     with codecs.open('config.json', 'r') as f:
         json_config = json.loads(f.read())
         host = json_config['host']
@@ -42,9 +39,13 @@ def recognize_music(filename):
     }
     re = ACRCloudRecognizer(config)
     result = []
-    for i in range(0, duration, step):
+    i = 0
+    while True:
         current_time = time.strftime('%H:%M:%S', time.gmtime(i))
         res_data = re.recognize_by_file(filename, i)
+        print current_time
+        if res_data == -1:
+            break
         try:
             ret_dict = json.loads(res_data)
         except:
@@ -108,17 +109,17 @@ def recognize_music(filename):
 def save_results(target):
     try:
         results = recognize_music(target)
-        print results
         filename = 'result-' + target.split('/')[-1].strip() + '.csv'
         try:
             os.remove(filename)
         except:
             pass
-        with codecs.open(filename, 'w', 'utf-8-sig') as f:
-            fields = ['time', 'title', 'artists', 'album', 'acrid', 'isrc', 'dezzer', 'spotify', 'itunes']
-            dw = csv.writer(f)
-            dw.writerow(fields)
-            dw.writerows(results)
+        if results:
+            with codecs.open(filename, 'w', 'utf-8-sig') as f:
+                fields = ['time', 'title', 'artists', 'album', 'acrid', 'isrc', 'dezzer', 'spotify', 'itunes']
+                dw = csv.writer(f)
+                dw.writerow(fields)
+                dw.writerows(results)
     except:
         pass
 
