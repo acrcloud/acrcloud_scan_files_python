@@ -118,7 +118,6 @@ def recognize_music(filename):
 
 def save_results(target):
     try:
-        print target
         results = recognize_music(target)
         filename = 'result-' + target.split('/')[-1].strip() + '.csv'
         try:
