@@ -8,7 +8,8 @@ import json
 from acrcloudpysdk.recognizer import ACRCloudRecognizer
 import time
 from backports import csv
-from multiprocessing import Pool, cpu_count
+import getopt
+
 
 step = 10
 
@@ -134,25 +135,36 @@ def save_results(target):
         pass
 
 
-def main(path):
-    p = Pool(cpu_count())
+def usage():
+    print '[-] Usage: acrcloud_scan_files_python.py target'
+    print '[-] -d folder path'
+    print '[-] -f file path'
+    print '[-] -h get usage help'
+    print '[-] Scan Folder Example: python acrcloud_scan_files_python.py -d ~/music'
+    print '[-] Scan File Example: python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3'
+
+
+def path_main(path):
     file_list = os.listdir(path)
-    files = []
     for file in file_list:
         filepath = path + '/' + file
-        files.append(filepath)
-    p.map(save_results, files)
-    p.close()
-    p.join()
+        save_results(filepath)
 
-
+os.getcwd()
 if __name__ == '__main__':
-    if len(sys.argv) <= 1:
-        print '[-] Usage: acrcloud_scan_files_python.py targetpath'
-        print '[-] Example: python acrcloud_scan_files_python.py ~/music'
-        print '[-] Default is scan folder where this script in.'
-        path = os.getcwd()
-        main(path)
-    else:
-        path = sys.argv[1]
-        main(path)
+    try:
+        usage()
+        opts, args = getopt.getopt(sys.argv[1:], "hd:f:")
+    except getopt.GetoptError, err:
+        print str(err)
+        sys.exit()
+    for op, value in opts:
+        if op == '-h':
+            usage()
+            sys.exit()
+        elif op == '-d':
+            path = value
+            path_main(value)
+        elif op == '-f':
+            file_path = value
+            save_results(file_path)
