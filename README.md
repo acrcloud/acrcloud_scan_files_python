@@ -14,7 +14,7 @@
  Open your terminal and change to the script directory of <strong>acrcloud_scan_files_python-master</strong>. Then run the command: 
  
  ```
-    pip install -r requirements.txt
+pip install -r requirements.txt
  ```
 ## Choose your lib
  
@@ -40,15 +40,21 @@
   "access_secret": "xxxxx"
 }
  ```
-
- ```python
-    python acrcloud_scan_files_python.py path
+ 
  ```
-  Example:
- ```python
-    python acrcloud_scan_files_python.py ~/music
+ python acrcloud_scan_files_python.py -d folder path
+ python acrcloud_scan_files_python.py -f file path
+ python acrcloud_scan_files_python.py -h get usage help
  ```
 
+### Scan Folder Example:
+ ```
+ python acrcloud_scan_files_python.py -d ~/music
+ ```
+### Scan File Example: 
+ ```
+ python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
+ ```
 Default is scan folder where this script in.
 
 The results are saved in the folder where this script in.
