@@ -1,4 +1,4 @@
-# ACRCloud Scan Files Tool
+# [Audio Recognition](https://www.acrcloud.com/music-recognition) -- File Scan Tool
 
 ## Requirements
 
@@ -7,23 +7,23 @@
 - eyeD3==0.7.9
 - requests==2.10.0
 
-## Install
+## Installation 
  
- If your system is windows you must to download Python 2,and install it.
+ For Windows System, you must install [Python 2](https://www.python.org/downloads/windows/) and [pip](https://pip.pypa.io/en/stable/installing/).
  
- Open your Terminal then cd to the script directory.
+ Open your terminal and change to the script directory of <strong>acrcloud_scan_files_python-master</strong>. Then run the command: 
  
  ```
     pip install -r requirements.txt
  ```
 ## Choose your lib
- This step is very important.
- if your system is linux,please click [here](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/linux/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true) to download the lib
+ 
+ [Library for Linux](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/linux/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true).
  
  
- if your system is osx, please click [here](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/mac/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true) to download the  lib
+ [Library for Mac OSX](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/mac/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true).
  
- Then, copy the "acrcloud_extr_tool.so" file to acrcloudpysdk to replace the original file 
+ Then, copy "acrcloud_extr_tool.so" to <strong>acrcloudpysdk</strong> directory and replace the original file.
  
  
 
