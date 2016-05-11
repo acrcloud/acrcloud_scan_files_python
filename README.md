@@ -39,6 +39,8 @@ pip install -r requirements.txt
 
  x64: [win64 acrcloud_extr_tool](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/windows/win64/acrcloud/acrcloud_extr_tool.pyd?raw=true)
  
+ Then, copy "acrcloud_extr_tool.so" to acrcloudpysdk directory
+ 
 ## Usage: 
  
  Before you use this script,you must have acrcloud host,access_key and access_secret.
