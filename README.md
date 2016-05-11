@@ -4,7 +4,6 @@
 
 - Python 2.7
 - backports.csv==1.0.1
-- eyeD3==0.7.9
 - requests==2.10.0
 
 ## Installation 
@@ -16,7 +15,9 @@
  ```
 pip install -r requirements.txt
  ```
-## Choose your lib
+## For OSX and Linux
+
+### Choose your lib
  
  [Library for Linux](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/linux/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true).
  
@@ -24,9 +25,20 @@ pip install -r requirements.txt
  [Library for Mac OSX](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/mac/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true).
  
  Then, copy "acrcloud_extr_tool.so" to <strong>acrcloudpysdk</strong> directory and replace the original file.
- 
- 
 
+## For Windows
+
+### Install Library
+ Windows Runtime Library
+ X86: [download and install Library(windows/vcredist_x86.exe)](https://www.microsoft.com/en-us/download/details.aspx?id=5555)
+ 
+ x64: [download and install Library(windows/vcredist_x64.exe)](https://www.microsoft.com/en-us/download/details.aspx?id=14632)
+
+### Choose your lib
+ x86: [win32 acrcloud_extr_tool](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/windows/win32/acrcloud/acrcloud_extr_tool.pyd?raw=true)
+
+ x64: [win64 acrcloud_extr_tool](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/windows/win64/acrcloud/acrcloud_extr_tool.pyd?raw=true)
+ 
 ## Usage: 
  
  Before you use this script,you must have acrcloud host,access_key and access_secret.
