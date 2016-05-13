@@ -15,6 +15,12 @@
 - Python 2.7
 - backports.csv==1.0.1
 - requests==2.10.0
+- Follow one of the tutorials to create a project and get your host, access_key and access_secret.
+
+ * [How to identify songs by sound](https://www.acrcloud.com/docs/tutorials/identify-music-by-sound/)
+ 
+ * [How to detect custom audio content by sound](https://www.acrcloud.com/docs/tutorials/identify-audio-custom-content/)
+ 
 
 ## Installation 
  
