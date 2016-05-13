@@ -1,4 +1,14 @@
-# [Audio Recognition](https://www.acrcloud.com/music-recognition) -- File Scan Tool
+# [Audio Recognition](https://www.acrcloud.com/music-recognition) -- File Scan Tool (Python)
+
+## Overview
+  [ACRCloud](https://www.acrcloud.com/) provides [Automatic Content Recognition](https://www.acrcloud.com/docs/introduction/automatic-content-recognition/) services for [Audio Fingerprinting](https://www.acrcloud.com/docs/introduction/audio-fingerprinting/) based applications such as **[Audio Recognition](https://www.acrcloud.com/music-recognition)** (supports music, video, ads for both online and offline), **[Broadcast Monitoring](https://www.acrcloud.com/broadcast-monitoring)**, **[Second Screen](https://www.acrcloud.com/second-screen-synchronization)**, **[Copyright Protection](https://www.acrcloud.com/copyright-protection-de-duplication)** and etc.<br>
+  
+  This tool can scan audio/video files and detect audios you want to recognize such as music, ads.
+
+  Supported Format:
+  
+>>Audio: mp3, wav, m4a, flac, aac, amr, ape, ogg ...<br>
+>>Video: mp4, mkv, wmv, flv, ts, avi ...
 
 ## Requirements
 
