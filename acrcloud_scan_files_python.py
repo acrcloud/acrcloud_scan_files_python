@@ -127,7 +127,7 @@ def save_results(target):
             pass
         if results:
             with codecs.open(filename, 'w', 'utf-8-sig') as f:
-                fields = ['time', 'title', 'artists', 'album', 'acrid', 'isrc', 'dezzer', 'spotify', 'itunes', 'custom_files_title', 'audio_id']
+                fields = ['time', 'title', 'artists', 'album', 'acrid', 'label', 'isrc', 'dezzer', 'spotify', 'itunes', 'custom_files_title', 'audio_id']
                 dw = csv.writer(f)
                 dw.writerow(fields)
                 dw.writerows(results)
