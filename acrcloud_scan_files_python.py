@@ -89,6 +89,10 @@ def recognize_music(filename):
                     except:
                         itunes = ''
                     try:
+                        youtube = metadata['music'][0]['external_metadata']['youtube']['vid']
+                    except:
+                        youtube = ''
+                    try:
                         custom_files_title = metadata['custom_files'][0]['title']
                     except:
                         custom_files_title = ''
@@ -98,7 +102,7 @@ def recognize_music(filename):
                         audio_id = ''
                     res = (current_time, title, artists, album,
                            acrid, label, isrc, dezzer, spotify,
-                           itunes, custom_files_title, audio_id)
+                           itunes, youtube, custom_files_title, audio_id)
                     print current_time, res
                     result.append(res)
                 elif code == 1001:
@@ -127,7 +131,7 @@ def save_results(target):
             pass
         if results:
             with codecs.open(filename, 'w', 'utf-8-sig') as f:
-                fields = ['time', 'title', 'artists', 'album', 'acrid', 'label', 'isrc', 'dezzer', 'spotify', 'itunes', 'custom_files_title', 'audio_id']
+                fields = ['time', 'title', 'artists', 'album', 'acrid', 'label', 'isrc', 'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
                 dw = csv.writer(f)
                 dw.writerow(fields)
                 dw.writerows(results)
