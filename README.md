@@ -62,10 +62,10 @@ pip install -r requirements.txt
  Before you use this script,you must have acrcloud host,access_key and access_secret.
  If you haven't have these ,you can register one https://console.acrcloud.com/signup
  
- Change the content of config.json,fill in your host,access_key and access_secret
+ Change the content of config.json,fill in your host, access_key and access_secret
  ```
 {
-  "host": "ap-southeast-1.api.acrcloud.com",
+  "host": "xxxxx",
   "access_key": "xxxxx",
   "access_secret": "xxxxx"
 }
