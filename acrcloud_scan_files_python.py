@@ -141,9 +141,9 @@ def save_results(target):
 
 def usage():
     print '[-] Usage: acrcloud_scan_files_python.py target'
-    print '[-] -d folder path'
-    print '[-] -f file path'
-    print '[-] -h get usage help'
+    print '[-] -d folder_path'
+    print '[-] -f file_path'
+    print '[-] -h get_usage_help'
     print '[-] Scan Folder Example: python acrcloud_scan_files_python.py -d ~/music'
     print '[-] Scan File Example: python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3'
 
