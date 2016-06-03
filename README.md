@@ -72,9 +72,9 @@ pip install -r requirements.txt
  ```
  
  ```
- python acrcloud_scan_files_python.py -d folder path
- python acrcloud_scan_files_python.py -f file path
- python acrcloud_scan_files_python.py -h get usage help
+ python acrcloud_scan_files_python.py -d folder_path
+ python acrcloud_scan_files_python.py -f file_path
+ python acrcloud_scan_files_python.py -h get_usage_help
  ```
 
 ### Scan Folder Example:
