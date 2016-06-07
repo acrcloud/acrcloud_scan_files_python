@@ -95,7 +95,6 @@ def parse_data(current_time, metadata):
 def recognize_file(filename, step):
     result = []
     i = 0
-    retry = 3
     while True:
         filename, current_time, res_data = scan_file_part(filename, i)
         print filename, current_time
@@ -122,12 +121,13 @@ def recognize_file(filename, step):
                 print msg
                 write_error(filename, i, 'NETWORK ERROR')
             i += step
-        except:
+        except Exception as e:
+            print str(e)
             write_error(filename, i, 'JSON ERROR')
     return result
 
 
-def main(target, step):
+def scan_file_main(target, step):
     results = recognize_file(target, step)
     filename = 'result-' + target.split('/')[-1].strip() + '.csv'
     if os.path.exists(filename):
@@ -141,11 +141,11 @@ def main(target, step):
             dw.writerows(results)
 
 
-def path_main(path, step):
+def scan_folder_main(path, step):
     file_list = os.listdir(path)
     for i in file_list:
         file_path = path + '/' + i
-        main(file_path, step)
+        scan_file_main(file_path, step)
 
 
 def empty_error_scan():
@@ -166,8 +166,54 @@ def write_error(file_path, error_time, error_detail):
         print msg
         f.write(msg)
 
+
+def scan_txt_file(file_path):
+    with codecs.open(file_path, 'r', 'utf-8') as f:
+        tasks = f.readlines(file_path)
+    for task in tasks:
+        result = []
+        error_task = task.split('||')
+        task_file, task_time = error_task[0].encode('utf-8'), int(error_task[1])
+        path, current_time, res_data = scan_file_part(task_file, task_time)
+        result_file_name = 'result-' + task_file.split('/')[-1].strip() + '.csv'
+        print file_path, current_time
+        try:
+            ret_dict = json.loads(res_data)
+            code = ret_dict['status']['code']
+            msg = ret_dict['status']['msg']
+            if 'metadata' in ret_dict:
+                metadata = ret_dict['metadata']
+                res = parse_data(current_time, metadata)
+                result.append(res)
+                if result:
+                    with codecs.open(result_file_name, 'a', 'utf-8-sig') as f:
+                        dw = csv.writer(f)
+                        dw.writerows(result)
+                print res[1]
+            if code == 2005:
+                print 'done!'
+                break
+            elif code == 1001:
+                print "No Result"
+            elif code == 3001:
+                print 'Missing/Invalid Access Key'
+                break
+            elif code == 3003:
+                print 'Limit exceeded'
+            elif code == 3000:
+                print msg
+        except Exception as e:
+            print str(e)
+
+
 if __name__ == '__main__':
-    usage = '''
+    usage = r'''
+        _    ____ ____   ____ _                 _
+       / \  / ___|  _ \ / ___| | ___  _   _  __| |
+      / _ \| |   | |_) | |   | |/ _ \| | | |/ _` |
+     / ___ \ |___|  _ <| |___| | (_) | |_| | (_| |
+    /_/   \_\____|_| \_\\____|_|\___/ \____|\____|
+
     Usage:
     python acrcloud_scan_files_python.py -d folder_path
         python acrcloud_scan_files_python.py -f file_path
@@ -179,18 +225,24 @@ if __name__ == '__main__':
         python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30
         python acrcloud_scan_files_python.py -d ~/music -s 30
     '''
-    print usage
+
     parser = optparse.OptionParser()
-    parser.add_option('-f', '--file', dest='file_name', type='string',
+    parser.add_option('-f', '--file', dest='file_path', type='string',
                       help='Scan file you want to recognize')
-    parser.add_option('-d', '--folder', dest='folder', type='string',
+    parser.add_option('-d', '--folder', dest='folder_path', type='string',
                       help='Scan folder you want to recognize')
     parser.add_option('-s', '--step', dest='step', type='int', default=10,
                       help='step')
+    parser.add_option('-e', '--error_file', dest='error_file', type='string',
+                      help='error scan file')
     (options, args) = parser.parse_args()
-    if options.file_name:
+    if options.file_path:
         empty_error_scan()
-        main(options.file_name, options.step)
-    if options.folder:
+        scan_file_main(options.file_path, options.step)
+    elif options.folder_path:
         empty_error_scan()
-        path_main(options.folder, options.step)
+        scan_folder_main(options.folder_path, options.step)
+    elif options.error_file:
+        scan_txt_file(options.error_file)
+    else:
+        print usage
