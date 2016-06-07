@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# encoding:utf-8
+# coding:utf-8
 
 import os
 import codecs
@@ -44,8 +44,10 @@ def recognize_music(filename):
     while True:
         current_time = time.strftime('%H:%M:%S', time.gmtime(i))
         res_data = re.recognize_by_file(filename, i)
-        if res_data == -1:
+        if json.loads(res_data)['status']['code'] == 3000:
             retry -= 1
+            if retry == 0:
+                print "Please Check Your Network!"
         if retry > 0:
             try:
                 ret_dict = json.loads(res_data)
