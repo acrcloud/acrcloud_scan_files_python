@@ -8,10 +8,7 @@ import json
 from acrcloudpysdk.recognizer import ACRCloudRecognizer
 import time
 from backports import csv
-import getopt
-
-
-step = 10
+import optparse
 
 
 def get_tracks_artists(artists):
@@ -23,7 +20,7 @@ def get_tracks_artists(artists):
     return artists_names
 
 
-def recognize_music(filename):
+def recognize_music(filename, step):
     with codecs.open('config.json', 'r') as f:
         json_config = json.loads(f.read())
         host = json_config['host']
@@ -44,14 +41,17 @@ def recognize_music(filename):
     while True:
         current_time = time.strftime('%H:%M:%S', time.gmtime(i))
         res_data = re.recognize_by_file(filename, i)
-        if json.loads(res_data)['status']['code'] == 3000:
+        print filename, current_time
+        code = json.loads(res_data)['status']['code']
+        if code == 3000:
             retry -= 1
             if retry == 0:
                 print "Please Check Your Network!"
+        if code == 2005:
+            break
         if retry > 0:
             try:
                 ret_dict = json.loads(res_data)
-                code = ret_dict['status']['code']
                 if code == 0:
                     metadata = ret_dict['metadata']
                     try:
@@ -105,8 +105,8 @@ def recognize_music(filename):
                     res = (current_time, title, artists, album,
                            acrid, label, isrc, dezzer, spotify,
                            itunes, youtube, custom_files_title, audio_id)
-                    print current_time, res
                     result.append(res)
+                    print res[1]
                 elif code == 1001:
                     print "No Result"
                 elif code == 3001:
@@ -114,18 +114,17 @@ def recognize_music(filename):
                     break
                 elif code == 3003:
                     print 'Limit exceeded'
-                    return result
             except:
                 pass
         else:
-            break
+            retry = 3
         i += step
     return result
 
 
-def save_results(target):
+def main(target, step):
     try:
-        results = recognize_music(target)
+        results = recognize_music(target, step)
         filename = 'result-' + target.split('/')[-1].strip() + '.csv'
         try:
             os.remove(filename)
@@ -141,36 +140,35 @@ def save_results(target):
         pass
 
 
-def usage():
-    print '[-] Usage: acrcloud_scan_files_python.py target'
-    print '[-] -d folder_path'
-    print '[-] -f file_path'
-    print '[-] -h get_usage_help'
-    print '[-] Scan Folder Example: python acrcloud_scan_files_python.py -d ~/music'
-    print '[-] Scan File Example: python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3'
-
-
-def path_main(path):
+def path_main(path, step):
     file_list = os.listdir(path)
-    for file in file_list:
-        filepath = path + '/' + file
-        save_results(filepath)
+    for i in file_list:
+        file_path = path + '/' + i
+        main(file_path, step)
 
-os.getcwd()
 if __name__ == '__main__':
-    try:
-        usage()
-        opts, args = getopt.getopt(sys.argv[1:], "hd:f:")
-    except getopt.GetoptError, err:
-        print str(err)
-        sys.exit()
-    for op, value in opts:
-        if op == '-h':
-            usage()
-            sys.exit()
-        elif op == '-d':
-            path = value
-            path_main(value)
-        elif op == '-f':
-            file_path = value
-            save_results(file_path)
+    usage = '''
+        Example:
+            python acrcloud_scan_files_python.py -d ~/music
+            python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
+        If you want to change scan interval,you can add step param
+        Example:
+            python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30
+            python acrcloud_scan_files_python.py -d ~/music -s 30
+    '''
+    print usage
+    parser = optparse.OptionParser()
+    parser.add_option('-f', '--file', dest='file_name', type='string',
+                      help='Scan file you want to recognize')
+    parser.add_option('-d', '--folder', dest='folder', type='string',
+                      help='Scan folder you want to recognize')
+    parser.add_option('-s', '--step', dest='step', type='int', default=10,
+                      help='step')
+    (options, args) = parser.parse_args()
+    if options.file_name:
+        main(options.file_name, options.step)
+    if options.folder:
+        path_main(options.folder, options.step)
+
+
+
