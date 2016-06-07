@@ -19,7 +19,7 @@ def get_tracks_artists(artists):
     return artists_names
 
 
-def recognize_music(filename, step):
+def set_config():
     with codecs.open('config.json', 'r') as f:
         json_config = json.loads(f.read())
         host = json_config['host']
@@ -34,109 +34,111 @@ def recognize_music(filename, step):
         'timeout': 10  # seconds
     }
     re = ACRCloudRecognizer(config)
+    return re
+
+
+def parse_data(current_time, metadata):
+    try:
+        title = metadata['music'][0]['title']
+    except:
+        title = ''
+    try:
+        isrc = metadata['music'][0]['external_ids']['isrc']
+    except:
+        isrc = ''
+    try:
+        acrid = metadata['music'][0]['acrid']
+    except:
+        acrid = ''
+    try:
+        label = metadata['music'][0]['label']
+    except:
+        label = ''
+    try:
+        album = metadata['music'][0]['album']['name']
+    except:
+        album = ''
+    try:
+        artists = get_tracks_artists(metadata['music'][0]['artists'])
+    except:
+        artists = ''
+    try:
+        dezzer = str(metadata['music'][0]['external_metadata']['deezer']['track']['id'])
+    except:
+        dezzer = ''
+    try:
+        spotify = str(metadata['music'][0]['external_metadata']['spotify']['track']['id'])
+    except:
+        spotify = ''
+    try:
+        itunes = str(metadata['music'][0]['external_metadata']['itunes']['track']['id'])
+    except:
+        itunes = ''
+    try:
+        youtube = metadata['music'][0]['external_metadata']['youtube']['vid']
+    except:
+        youtube = ''
+    try:
+        custom_files_title = metadata['custom_files'][0]['title']
+    except:
+        custom_files_title = ''
+    try:
+        audio_id = metadata['custom_files'][0]['audio_id']
+    except:
+        audio_id = ''
+    res = (current_time, title, artists, album,
+           acrid, label, isrc, dezzer, spotify,
+           itunes, youtube, custom_files_title, audio_id)
+    return res
+
+
+def recognize_file(filename, step):
     result = []
     i = 0
     retry = 3
     while True:
-        current_time = time.strftime('%H:%M:%S', time.gmtime(i))
-        res_data = re.recognize_by_file(filename, i)
+        filename, current_time, res_data = scan_file_part(filename, i)
         print filename, current_time
-        code = json.loads(res_data)['status']['code']
-        if code == 3000:
-            retry -= 1
-            if retry == 0:
-                print "Please Check Your Network!"
-        if code == 2005:
-            break
-        if retry > 0:
-            try:
-                ret_dict = json.loads(res_data)
-                if code == 0:
-                    metadata = ret_dict['metadata']
-                    try:
-                        title = metadata['music'][0]['title']
-                    except:
-                        title = ''
-                    try:
-                        isrc = metadata['music'][0]['external_ids']['isrc']
-                    except:
-                        isrc = ''
-                    try:
-                        acrid = metadata['music'][0]['acrid']
-                    except:
-                        acrid = ''
-                    try:
-                        label = metadata['music'][0]['label']
-                    except:
-                        label = ''
-                    try:
-                        album = metadata['music'][0]['album']['name']
-                    except:
-                        album = ''
-                    try:
-                        artists = get_tracks_artists(metadata['music'][0]['artists'])
-                    except:
-                        artists = ''
-                    try:
-                        dezzer = str(metadata['music'][0]['external_metadata']['deezer']['track']['id'])
-                    except:
-                        dezzer = ''
-                    try:
-                        spotify = str(metadata['music'][0]['external_metadata']['spotify']['track']['id'])
-                    except:
-                        spotify = ''
-                    try:
-                        itunes = str(metadata['music'][0]['external_metadata']['itunes']['track']['id'])
-                    except:
-                        itunes = ''
-                    try:
-                        youtube = metadata['music'][0]['external_metadata']['youtube']['vid']
-                    except:
-                        youtube = ''
-                    try:
-                        custom_files_title = metadata['custom_files'][0]['title']
-                    except:
-                        custom_files_title = ''
-                    try:
-                        audio_id = metadata['custom_files'][0]['audio_id']
-                    except:
-                        audio_id = ''
-                    res = (current_time, title, artists, album,
-                           acrid, label, isrc, dezzer, spotify,
-                           itunes, youtube, custom_files_title, audio_id)
-                    result.append(res)
-                    print res[1]
-                elif code == 1001:
-                    print "No Result"
-                elif code == 3001:
-                    print 'Missing/Invalid Access Key'
-                    break
-                elif code == 3003:
-                    print 'Limit exceeded'
-            except:
-                pass
-        else:
-            retry = 3
-        i += step
+        try:
+            ret_dict = json.loads(res_data)
+            code = ret_dict['status']['code']
+            msg = ret_dict['status']['msg']
+            if 'metadata' in ret_dict:
+                metadata = ret_dict['metadata']
+                res = parse_data(current_time, metadata)
+                result.append(res)
+                print res[1]
+            if code == 2005:
+                print 'done!'
+                break
+            elif code == 1001:
+                print "No Result"
+            elif code == 3001:
+                print 'Missing/Invalid Access Key'
+                break
+            elif code == 3003:
+                print 'Limit exceeded'
+            elif code == 3000:
+                print msg
+                write_error(filename, i, 'NETWORK ERROR')
+            i += step
+        except:
+            write_error(filename, i, 'JSON ERROR')
     return result
 
 
 def main(target, step):
-    try:
-        results = recognize_music(target, step)
-        filename = 'result-' + target.split('/')[-1].strip() + '.csv'
-        try:
-            os.remove(filename)
-        except:
-            pass
-        if results:
-            with codecs.open(filename, 'w', 'utf-8-sig') as f:
-                fields = ['time', 'title', 'artists', 'album', 'acrid', 'label', 'isrc', 'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
-                dw = csv.writer(f)
-                dw.writerow(fields)
-                dw.writerows(results)
-    except:
-        pass
+    results = recognize_file(target, step)
+    filename = 'result-' + target.split('/')[-1].strip() + '.csv'
+    if os.path.exists(filename):
+        os.remove(filename)
+    if results:
+        with codecs.open(filename, 'w', 'utf-8-sig') as f:
+            fields = ['time', 'title', 'artists', 'album', 'acrid', 'label', 'isrc', 'dezzer', 'spotify', 'itunes',
+                      'youtube', 'custom_files_title', 'audio_id']
+            dw = csv.writer(f)
+            dw.writerow(fields)
+            dw.writerows(results)
 
 
 def path_main(path, step):
@@ -145,18 +147,37 @@ def path_main(path, step):
         file_path = path + '/' + i
         main(file_path, step)
 
+
+def empty_error_scan():
+    if os.path.exists('error_scan.txt'):
+        os.remove('error_scan.txt')
+
+
+def scan_file_part(path, start_time):
+    current_time = time.strftime('%H:%M:%S', time.gmtime(start_time))
+    re = set_config()
+    res_data = re.recognize_by_file(path, start_time)
+    return path, current_time, res_data
+
+
+def write_error(file_path, error_time, error_detail):
+    with open('error_scan.txt', 'a',) as f:
+        msg = file_path + '||' + str(error_time) + '||' + str(error_detail) + '\n'
+        print msg
+        f.write(msg)
+
 if __name__ == '__main__':
     usage = '''
-        Usage:
-            python acrcloud_scan_files_python.py -d folder_path
-            python acrcloud_scan_files_python.py -f file_path
-        Example:
-            python acrcloud_scan_files_python.py -d ~/music
-            python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
-        If you want to change scan interval,you can add step param
-        Example:
-            python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30
-            python acrcloud_scan_files_python.py -d ~/music -s 30
+    Usage:
+    python acrcloud_scan_files_python.py -d folder_path
+        python acrcloud_scan_files_python.py -f file_path
+    Example:
+        python acrcloud_scan_files_python.py -d ~/music
+        python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
+    If you want to change scan interval,you can add step param
+    Example:
+        python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30
+        python acrcloud_scan_files_python.py -d ~/music -s 30
     '''
     print usage
     parser = optparse.OptionParser()
@@ -168,9 +189,8 @@ if __name__ == '__main__':
                       help='step')
     (options, args) = parser.parse_args()
     if options.file_name:
+        empty_error_scan()
         main(options.file_name, options.step)
     if options.folder:
+        empty_error_scan()
         path_main(options.folder, options.step)
-
-
-
