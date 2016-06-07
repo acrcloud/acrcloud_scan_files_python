@@ -3,7 +3,6 @@
 
 import os
 import codecs
-import sys
 import json
 from acrcloudpysdk.recognizer import ACRCloudRecognizer
 import time
@@ -148,6 +147,9 @@ def path_main(path, step):
 
 if __name__ == '__main__':
     usage = '''
+        Usage:
+            python acrcloud_scan_files_python.py -d folder_path
+            python acrcloud_scan_files_python.py -f file_path
         Example:
             python acrcloud_scan_files_python.py -d ~/music
             python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
