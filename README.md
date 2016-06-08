@@ -92,7 +92,7 @@ pip install -r requirements.txt
  python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
  ```
  
-## Add another params
+## Add more params
  ```
  If you want to change scan interval or you want to set recognize range,you can add some params
  Example:
@@ -102,7 +102,7 @@ pip install -r requirements.txt
 ## Scan error_scan file
 
  ```
- When Scan program  occurs some errors,error detail will store in error_scan.txt,When scan task done, you can rescan these error task.
+ When Scan program  occurs some errors,error detail will store in error_scan.txt,When the scan tasks are finished, you can rescan these error task.
  Example: 
     python acrcloud_scan_files_python.py -e error_scan.txt
  ```
