@@ -58,6 +58,12 @@ pip install -r requirements.txt
  Then, copy "acrcloud_extr_tool.so" to acrcloudpysdk directory
  
 ## Usage: 
+
+        _    ____ ____   ____ _                 _
+       / \  / ___|  _ \ / ___| | ___  _   _  __| |
+      / _ \| |   | |_) | |   | |/ _ \| | | |/ _` |
+     / ___ \ |___|  _ <| |___| | (_) | |_| | (_| |
+    /_/   \_\____|_| \_\\____|_|\___/ \____|\____|
  
  Before you use this script,you must have acrcloud host,access_key and access_secret.
  If you haven't have these ,you can register one https://console.acrcloud.com/signup
@@ -85,6 +91,22 @@ pip install -r requirements.txt
  ```
  python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
  ```
+ 
+## Add another params
+ ```
+ If you want to change scan interval or you want to set recognize range,you can add some params
+ Example:
+     python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30 -r 0-20
+     python acrcloud_scan_files_python.py -d ~/music -s 30
+ ```
+## Scan error_scan file
+
+ ```
+ When Scan program  occurs some errors,error detail will store in error_scan.txt,When scan task done, you can rescan these error task.
+ Example: 
+    python acrcloud_scan_files_python.py -e error_scan.txt
+ ```
+
 Default is scan folder where this script in.
 
 The results are saved in the folder where this script in.
