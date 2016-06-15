@@ -43,6 +43,10 @@ def parse_data(current_time, metadata):
     except:
         title = ''
     try:
+        offset = metadata['music'][0]['play_offset_ms']
+    except:
+        offset = ''
+    try:
         isrc = metadata['music'][0]['external_ids']['isrc']
     except:
         isrc = ''
@@ -86,9 +90,9 @@ def parse_data(current_time, metadata):
         audio_id = metadata['custom_files'][0]['audio_id']
     except:
         audio_id = ''
-    res = (current_time, title, artists, album,
-           acrid, label, isrc, dezzer, spotify,
-           itunes, youtube, custom_files_title, audio_id)
+    res = (current_time, title, artists, album, acrid,
+           offset, label, isrc, dezzer, spotify, itunes,
+           youtube, custom_files_title, audio_id)
     return res
 
 
@@ -136,8 +140,8 @@ def scan_file_main(target, start_time, stop_time, step):
         os.remove(filename)
     if results:
         with codecs.open(filename, 'w', 'utf-8-sig') as f:
-            fields = ['time', 'title', 'artists', 'album', 'acrid', 'label', 'isrc', 'dezzer', 'spotify', 'itunes',
-                      'youtube', 'custom_files_title', 'audio_id']
+            fields = ['time', 'title', 'artists', 'album', 'acrid', 'play offset(ms)', 'label', 'isrc', 'dezzer',
+                      'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
             dw = csv.writer(f)
             dw.writerow(fields)
             dw.writerows(results)
