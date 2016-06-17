@@ -46,6 +46,7 @@ pip install -r requirements.txt
 
 ### Install Library
  Windows Runtime Library
+ 
  X86: [download and install Library(windows/vcredist_x86.exe)](https://www.microsoft.com/en-us/download/details.aspx?id=5555)
  
  x64: [download and install Library(windows/vcredist_x64.exe)](https://www.microsoft.com/en-us/download/details.aspx?id=14632)
