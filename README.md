@@ -35,10 +35,10 @@ pip install -r requirements.txt
 
 ### Choose your lib
  
- [Library for Linux](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/linux/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true).
+ [Library for Linux](https://github.com/acrcloud/acrcloud_sdk_python/tree/master/linux/x86-64).
  
  
- [Library for Mac OSX](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/mac/x86-64/acrcloud/acrcloud_extr_tool.so?raw=true).
+ [Library for Mac OSX](https://github.com/acrcloud/acrcloud_sdk_python/tree/master/mac/x86-64).
  
  Then, copy "acrcloud_extr_tool.so" to <strong>acrcloudpysdk</strong> directory and replace the original file.
 
