@@ -94,6 +94,9 @@ pip install -r requirements.txt
  ```
  
 ## Add more params
+"-s" ---- scan step. （The scan interval.）
+
+"-r" ---- scan range. （The scan range.）
  ```
  If you want to change scan interval or you want to set recognize range,you can add some params
  Example:
