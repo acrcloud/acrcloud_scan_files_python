@@ -96,10 +96,10 @@ def parse_data(current_time, metadata):
     return res
 
 
-def recognize_file(filename,  start_time, stop_time, step):
+def recognize_file(filename,  start_time, stop_time, step, rec_length):
     result = []
     for i in range(start_time, stop_time, step):
-        filename, current_time, res_data = scan_file_part(filename, i)
+        filename, current_time, res_data = scan_file_part(filename, i, rec_length)
         print filename, current_time
         try:
             ret_dict = json.loads(res_data)
@@ -133,9 +133,9 @@ def recognize_file(filename,  start_time, stop_time, step):
 def scan_file_main(option, start_time, stop_time):
     target = option.file_path
     step = option.step
-    
+    rec_length = option.rec_length
     if start_time == 0 and stop_time == 0:
-        results = recognize_file(target, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target), step)
+        results = recognize_file(target, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target), step, rec_length)
     else:
         results = recognize_file(target, start_time, stop_time, step)
     filename = 'result-' + target.split('/')[-1].strip() + '.csv'
@@ -153,7 +153,7 @@ def scan_file_main(option, start_time, stop_time):
 def scan_folder_main(option, start_time, stop_time):
     path = option.folder_path
     step = option.step
-    
+
     file_list = os.listdir(path)
     for i in file_list:
         file_path = path + '/' + i
@@ -165,10 +165,10 @@ def empty_error_scan():
         os.remove('error_scan.txt')
 
 
-def scan_file_part(path, start_time):
+def scan_file_part(path, start_time, rec_length):
     current_time = time.strftime('%H:%M:%S', time.gmtime(start_time))
     re = set_config()
-    res_data = re.recognize_by_file(path, start_time)
+    res_data = re.recognize_by_file(path, start_time, rec_length)
     return path, current_time, res_data
 
 
@@ -234,7 +234,7 @@ if __name__ == '__main__':
         python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
     If you want to change scan interval or you want to set recognize range,you can add some params
     Example:
-        python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30 -r 0-20
+        python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30 -r 0-20 -l 10
         python acrcloud_scan_files_python.py -d ~/music -s 30
     '''
 
@@ -245,7 +245,7 @@ if __name__ == '__main__':
                       help='Scan folder you want to recognize')
     parser.add_option('-s', '--step', dest='step', type='int', default=10,
                       help='step')
-    parser.add_option('-rl', '--rec_length', dest='rec_length', type='int', default=10,
+    parser.add_option('-l', '--rec_length', dest='rec_length', type='int', default=10,
                       help='rec_length')
     parser.add_option('-e', '--error_file', dest='error_file', type='string',
                       help='error scan file')
