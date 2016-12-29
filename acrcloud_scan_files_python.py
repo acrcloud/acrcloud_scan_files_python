@@ -130,7 +130,10 @@ def recognize_file(filename,  start_time, stop_time, step):
     return result
 
 
-def scan_file_main(target, start_time, stop_time, step):
+def scan_file_main(option, start_time, stop_time):
+    target = option.file_path
+    step = option.step
+    
     if start_time == 0 and stop_time == 0:
         results = recognize_file(target, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target), step)
     else:
@@ -147,11 +150,14 @@ def scan_file_main(target, start_time, stop_time, step):
             dw.writerows(results)
 
 
-def scan_folder_main(path, start_time, stop_time, step):
+def scan_folder_main(option, start_time, stop_time):
+    path = option.folder_path
+    step = option.step
+    
     file_list = os.listdir(path)
     for i in file_list:
         file_path = path + '/' + i
-        scan_file_main(file_path, start_time, stop_time, step)
+        scan_file_main(option, start_time, stop_time)
 
 
 def empty_error_scan():
@@ -239,6 +245,8 @@ if __name__ == '__main__':
                       help='Scan folder you want to recognize')
     parser.add_option('-s', '--step', dest='step', type='int', default=10,
                       help='step')
+    parser.add_option('-rl', '--rec_length', dest='rec_length', type='int', default=10,
+                      help='rec_length')
     parser.add_option('-e', '--error_file', dest='error_file', type='string',
                       help='error scan file')
     parser.add_option('-r', '--range', dest='range', type='string', default='0-0',
@@ -248,10 +256,10 @@ if __name__ == '__main__':
     stop = int(options.range.split('-')[1])
     if options.file_path:
         empty_error_scan()
-        scan_file_main(options.file_path, start, stop, options.step)
+        scan_file_main(options, start, stop)
     elif options.folder_path:
         empty_error_scan()
-        scan_folder_main(options.folder_path, start, stop, options.step)
+        scan_folder_main(options, start, stop)
     elif options.error_file:
         scan_txt_file(options.error_file)
     else:
