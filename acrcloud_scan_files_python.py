@@ -156,7 +156,7 @@ def scan_folder_main(option, start_time, stop_time):
 
     file_list = os.listdir(path)
     for i in file_list:
-        file_path = path + '/' + i
+        option.file_path = path + '/' + i
         scan_file_main(option, start_time, stop_time)
 
 
