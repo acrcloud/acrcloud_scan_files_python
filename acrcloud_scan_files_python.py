@@ -19,8 +19,8 @@ def get_tracks_artists(artists):
     return artists_names
 
 
-def set_config():
-    with codecs.open('config.json', 'r') as f:
+def set_config(config_file):
+    with codecs.open(config_file, 'r') as f:
         json_config = json.loads(f.read())
         host = json_config['host']
         key = json_config['access_key']
@@ -96,11 +96,11 @@ def parse_data(current_time, metadata):
     return res
 
 
-def recognize_file(filename,  start_time, stop_time, step, rec_length):
+def recognize_file(filename, config_file,  start_time, stop_time, step, rec_length):
     result = []
     for i in range(start_time, stop_time, step):
-        filename, current_time, res_data = scan_file_part(filename, i, rec_length)
-        print filename, current_time
+        filename, current_time, res_data = scan_file_part(filename, config_file, i, rec_length)
+        print filename, current_time, res_data
         try:
             ret_dict = json.loads(res_data)
             code = ret_dict['status']['code']
@@ -134,10 +134,11 @@ def scan_file_main(option, start_time, stop_time):
     target = option.file_path
     step = option.step
     rec_length = option.rec_length
+    config_file = option.config
     if start_time == 0 and stop_time == 0:
-        results = recognize_file(target, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target), step, rec_length)
+        results = recognize_file(target, config_file, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target), step, rec_length)
     else:
-        results = recognize_file(target, start_time, stop_time, step)
+        results = recognize_file(target, config_file, start_time, stop_time, step)
     filename = 'result-' + target.split('/')[-1].strip() + '.csv'
     if os.path.exists(filename):
         os.remove(filename)
@@ -165,9 +166,9 @@ def empty_error_scan():
         os.remove('error_scan.txt')
 
 
-def scan_file_part(path, start_time, rec_length):
+def scan_file_part(path, config_file, start_time, rec_length):
     current_time = time.strftime('%H:%M:%S', time.gmtime(start_time))
-    re = set_config()
+    re = set_config(config_file)
     res_data = re.recognize_by_file(path, start_time, rec_length)
     return path, current_time, res_data
 
@@ -179,14 +180,17 @@ def write_error(file_path, error_time, error_detail):
         f.write(msg)
 
 
-def scan_txt_file(file_path):
+def scan_txt_file(options):
+    file_path = options.error_file
+    rec_length = option.rec_length
+    config_file = option.config
     with codecs.open(file_path, 'r', 'utf-8') as f:
         tasks = f.readlines(file_path)
     for task in tasks:
         result = []
         error_task = task.split('||')
         task_file, task_time = error_task[0].encode('utf-8'), int(error_task[1])
-        path, current_time, res_data = scan_file_part(task_file, task_time)
+        path, current_time, res_data = scan_file_part(task_file,config_file, task_time, rec_length)
         result_file_name = 'result-error_scan.csv'
         print file_path, current_time
         try:
@@ -241,6 +245,8 @@ if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('-f', '--file', dest='file_path', type='string',
                       help='Scan file you want to recognize')
+    parser.add_option('-c', '--config', dest='config', type='string', default="config.json",
+                      help='config file')
     parser.add_option('-d', '--folder', dest='folder_path', type='string',
                       help='Scan folder you want to recognize')
     parser.add_option('-s', '--step', dest='step', type='int', default=10,
@@ -261,6 +267,6 @@ if __name__ == '__main__':
         empty_error_scan()
         scan_folder_main(options, start, stop)
     elif options.error_file:
-        scan_txt_file(options.error_file)
+        scan_txt_file(options)
     else:
         print usage
