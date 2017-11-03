@@ -35,7 +35,9 @@ pip install -r requirements.txt
  
  [ACRCloud iOS SDK](https://github.com/acrcloud/acrcloud_sdk_python).
  
+ ```
  sudo python setup.py install
+ ```
 
 ## For Windows
 
