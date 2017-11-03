@@ -4,7 +4,7 @@
 import os
 import codecs
 import json
-from acrcloudpysdk.recognizer import ACRCloudRecognizer
+from acrcloud.recognizer import ACRCloudRecognizer
 import time
 from backports import csv
 import optparse
