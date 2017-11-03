@@ -31,16 +31,13 @@
  ```
 pip install -r requirements.txt
  ```
-## For OSX and Linux
-
-### Choose your lib
+## Install ACRCloud iOS SDK 
  
- [Library for Linux](https://github.com/acrcloud/acrcloud_sdk_python/tree/master/linux/x86-64).
+ [ACRCloud iOS SDK](https://github.com/acrcloud/acrcloud_sdk_python).
  
- 
- [Library for Mac OSX](https://github.com/acrcloud/acrcloud_sdk_python/tree/master/mac/x86-64).
- 
- Then, copy "acrcloud_extr_tool.so" to <strong>acrcloudpysdk</strong> directory and replace the original file.
+ ```
+ sudo python setup.py install
+ ```
 
 ## For Windows
 
@@ -51,12 +48,6 @@ pip install -r requirements.txt
  
  x64: [download and install Library(windows/vcredist_x64.exe)](https://www.microsoft.com/en-us/download/details.aspx?id=14632)
 
-### Choose your lib
- x86: [win32 acrcloud_extr_tool](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/windows/win32/acrcloud/acrcloud_extr_tool.pyd?raw=true)
-
- x64: [win64 acrcloud_extr_tool](https://github.com/acrcloud/acrcloud_sdk_python/blob/master/windows/win64/acrcloud/acrcloud_extr_tool.pyd?raw=true)
- 
- Then, copy "acrcloud_extr_tool.so" to acrcloudpysdk directory
  
 ## Usage: 
 
