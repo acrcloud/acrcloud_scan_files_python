@@ -51,6 +51,10 @@ def parse_data(current_time, metadata):
     except:
         isrc = ''
     try:
+        upc = metadata['music'][0]['external_ids']['upc']
+    except:
+        upc = ''        
+    try:
         acrid = metadata['music'][0]['acrid']
     except:
         acrid = ''
@@ -91,7 +95,7 @@ def parse_data(current_time, metadata):
     except:
         audio_id = ''
     res = (current_time, title, artists, album, acrid,
-           offset, label, isrc, dezzer, spotify, itunes,
+           offset, label, isrc, upc, dezzer, spotify, itunes,
            youtube, custom_files_title, audio_id)
     return res
 
