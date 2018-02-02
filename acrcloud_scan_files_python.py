@@ -140,7 +140,7 @@ def scan_file_main(option, start_time, stop_time):
     rec_length = option.rec_length
     config_file = option.config
     if start_time == 0 and stop_time == 0:
-        results = recognize_file(target, config_file, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target), step, rec_length)
+        results = recognize_file(target, config_file, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target)/1000, step, rec_length)
     else:
         results = recognize_file(target, config_file, start_time, stop_time, step)
     filename = 'result-' + target.split('/')[-1].strip() + '.csv'
@@ -148,7 +148,7 @@ def scan_file_main(option, start_time, stop_time):
         os.remove(filename)
     if results:
         with codecs.open(filename, 'w', 'utf-8-sig') as f:
-            fields = ['time', 'title', 'artists', 'album', 'acrid', 'play offset(ms)', 'label', 'isrc', 'dezzer',
+            fields = ['time', 'title', 'artists', 'album', 'acrid', 'play offset(ms)', 'label', 'isrc', 'upc', 'dezzer',
                       'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
             dw = csv.writer(f)
             dw.writerow(fields)
