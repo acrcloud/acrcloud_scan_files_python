@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding:utf-8
-
+from __future__ import print_function
 import os
 import codecs
 import json
@@ -104,7 +104,7 @@ def recognize_file(filename, config_file,  start_time, stop_time, step, rec_leng
     result = []
     for i in range(start_time, stop_time, step):
         filename, current_time, res_data = scan_file_part(filename, config_file, i, rec_length)
-        print filename, current_time, res_data
+        print(filename, current_time, res_data)
         try:
             ret_dict = json.loads(res_data)
             code = ret_dict['status']['code']
@@ -113,23 +113,23 @@ def recognize_file(filename, config_file,  start_time, stop_time, step, rec_leng
                 metadata = ret_dict['metadata']
                 res = parse_data(current_time, metadata)
                 result.append(res)
-                print res[1]
+                print(res[1])
             if code == 2005:
-                print 'done!'
+                print('done!')
                 break
             elif code == 1001:
-                print "No Result"
+                print("No Result")
             elif code == 3001:
-                print 'Missing/Invalid Access Key'
+                print('Missing/Invalid Access Key')
                 break
             elif code == 3003:
-                print 'Limit exceeded'
+                print('Limit exceeded')
             elif code == 3000:
-                print msg
+                print(msg)
                 write_error(filename, i, 'NETWORK ERROR')
             i += step
         except Exception as e:
-            print str(e)
+            print(str(e))
             write_error(filename, i, 'JSON ERROR')
     return result
 
@@ -140,9 +140,9 @@ def scan_file_main(option, start_time, stop_time):
     rec_length = option.rec_length
     config_file = option.config
     if start_time == 0 and stop_time == 0:
-        results = recognize_file(target, config_file, start_time, ACRCloudRecognizer.get_duration_ms_by_file(target)/1000, step, rec_length)
+        results = recognize_file(target, config_file, start_time, int(ACRCloudRecognizer.get_duration_ms_by_file(target)/1000), step, rec_length)
     else:
-        results = recognize_file(target, config_file, start_time, stop_time, step)
+        results = recognize_file(target, config_file, start_time, stop_time, step, rec_length)
     filename = 'result-' + target.split('/')[-1].strip() + '.csv'
     if os.path.exists(filename):
         os.remove(filename)
@@ -157,8 +157,6 @@ def scan_file_main(option, start_time, stop_time):
 
 def scan_folder_main(option, start_time, stop_time):
     path = option.folder_path
-    step = option.step
-
     file_list = os.listdir(path)
     for i in file_list:
         option.file_path = path + '/' + i
@@ -180,23 +178,23 @@ def scan_file_part(path, config_file, start_time, rec_length):
 def write_error(file_path, error_time, error_detail):
     with open('error_scan.txt', 'a',) as f:
         msg = file_path + '||' + str(error_time) + '||' + str(error_detail) + '\n'
-        print msg
+        print(msg)
         f.write(msg)
 
 
 def scan_txt_file(options):
     file_path = options.error_file
-    rec_length = option.rec_length
-    config_file = option.config
+    rec_length = options.rec_length
+    config_file = options.config
     with codecs.open(file_path, 'r', 'utf-8') as f:
         tasks = f.readlines(file_path)
     for task in tasks:
         result = []
         error_task = task.split('||')
         task_file, task_time = error_task[0].encode('utf-8'), int(error_task[1])
-        path, current_time, res_data = scan_file_part(task_file,config_file, task_time, rec_length)
+        path, current_time, res_data = scan_file_part(task_file, config_file, task_time, rec_length)
         result_file_name = 'result-error_scan.csv'
-        print file_path, current_time
+        print(file_path, current_time)
         try:
             ret_dict = json.loads(res_data)
             code = ret_dict['status']['code']
@@ -209,21 +207,21 @@ def scan_txt_file(options):
                     with codecs.open(result_file_name, 'a', 'utf-8-sig') as f:
                         dw = csv.writer(f)
                         dw.writerows(result)
-                print res[1]
+                print(res[1])
             if code == 2005:
-                print 'done!'
+                print('done!')
                 break
             elif code == 1001:
-                print "No Result"
+                print("No Result")
             elif code == 3001:
-                print 'Missing/Invalid Access Key'
+                print('Missing/Invalid Access Key')
                 break
             elif code == 3003:
-                print 'Limit exceeded'
+                print('Limit exceeded')
             elif code == 3000:
-                print msg
+                print(msg)
         except Exception as e:
-            print str(e)
+            print(str(e))
 
 
 if __name__ == '__main__':
@@ -273,4 +271,4 @@ if __name__ == '__main__':
     elif options.error_file:
         scan_txt_file(options)
     else:
-        print usage
+        print(usage)

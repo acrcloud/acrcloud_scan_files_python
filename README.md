@@ -12,9 +12,9 @@
 
 ## Requirements
 
-- Python 2.7
-- backports.csv==1.0.1
-- requests==2.10.0
+- Python
+- backports.csv
+- requests
 - Follow one of the tutorials to create a project and get your host, access_key and access_secret.
 
  * [How to identify songs by sound](https://www.acrcloud.com/docs/tutorials/identify-music-by-sound/)
@@ -24,7 +24,7 @@
 
 ## Installation 
  
- For Windows System, you must install [Python 2](https://www.python.org/downloads/windows/) and [pip](https://pip.pypa.io/en/stable/installing/).
+ For Windows System, you must install [Python](https://www.python.org/downloads/windows/) and [pip](https://pip.pypa.io/en/stable/installing/).
  
  Open your terminal and change to the script directory of <strong>acrcloud_scan_files_python-master</strong>. Then run the command: 
  
@@ -33,8 +33,18 @@ pip install -r requirements.txt
  ```
 ## Install ACRCloud Python SDK 
  
+
+ You can run the following command to install it.
+
+ ```
+ python -m pip install git+https://github.com/acrcloud/acrcloud_sdk_python
+ ```
+
+ Or you can download the sdk and install it by following command.
+
  [ACRCloud Python SDK](https://github.com/acrcloud/acrcloud_sdk_python).
- 
+
+
  ```
  sudo python setup.py install
  ```
