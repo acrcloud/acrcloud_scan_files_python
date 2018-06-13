@@ -111,11 +111,13 @@ class ACRCloud_Scan_Files:
             self.dlog.logger.error("do_recognize.error.({0}, {1}, {})".format(filepath,start_time,rec_length),exc_info=True)
         return filepath, current_time, None
 
-    def recognize_file(self, filepath, start_time, stop_time, step, rec_length):
+    def recognize_file(self, filepath, start_time, stop_time, step, rec_length, with_duration=0):
         self.dlog.logger.warn("scan_file.start_to_run: {0}".format(filepath))
 
-        fname = os.path.basename(filepath)
-        fworker = FilterWorker("./", "result-"+fname+"_with_duration.csv")
+        if with_duration == 1:
+            self.dlog.logger.warn("results with duration...")
+            fname = os.path.basename(filepath)
+            fworker = FilterWorker("./", "result-"+fname+"_with_duration.csv")
 
         result = []
         for i in range(start_time, stop_time, step):
@@ -128,14 +130,16 @@ class ACRCloud_Scan_Files:
                     metadata = ret_dict['metadata']
                     res = self.parse_data(current_time, metadata)
                     result.append(res)
-                    fworker.do_filter(fname, ret_dict, rec_length, current_time)
+                    if with_duration == 1:
+                        fworker.do_filter(fname, ret_dict, rec_length, current_time)
                     self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[1]))
                 if code == 2005:
                     self.dlog.logger.warn('recognize_file.(time:{0}, Done!)'.format(current_time, code))
                     break
                 elif code == 1001:
                     self.dlog.logger.info("recognize_file.(time:{0}, No_Result)".format(current_time, code))
-                    fworker.do_filter(fname, ret_dict, rec_length, current_time)
+                    if with_duration == 1:
+                        fworker.do_filter(fname, ret_dict, rec_length, current_time)
                 elif code == 3001:
                     self.dlog.logger.error('recognize_file.(time:{0}, Missing/Invalid Access Key)'.format(current_time, code))
                     break
@@ -148,7 +152,8 @@ class ACRCloud_Scan_Files:
             except Exception as e:
                 self.dlog.logger.error('recognize_file.error', exc_info=True)
                 self.write_error(filepath, i, 'JSON ERROR')
-        fworker.end_filter(fname, rec_length, current_time)
+        if with_duration == 1:
+            fworker.end_filter(fname, rec_length, current_time)
         return result
 
 
@@ -157,11 +162,12 @@ class ACRCloud_Scan_Files:
             filepath = option.file_path
             step = option.step
             rec_length = option.rec_length
+            with_duration = option.with_duation
             if start_time == 0 and stop_time == 0:
                 file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
-                results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length)
+                results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length, with_duration)
             else:
-                results = self.recognize_file(filepath, start_time, stop_time, step, rec_length)
+                results = self.recognize_file(filepath, start_time, stop_time, step, rec_length, with_duration)
 
             filename = 'result-' + os.path.basename(filepath.strip()) + '.csv'
             if os.path.exists(filename):
@@ -209,20 +215,14 @@ if __name__ == '__main__':
     '''
 
     parser = optparse.OptionParser()
-    parser.add_option('-f', '--file', dest='file_path', type='string',
-                      help='Scan file you want to recognize')
-    parser.add_option('-c', '--config', dest='config', type='string', default="config.json",
-                      help='config file')
-    parser.add_option('-d', '--folder', dest='folder_path', type='string',
-                      help='Scan folder you want to recognize')
-    parser.add_option('-s', '--step', dest='step', type='int', default=10,
-                      help='step')
-    parser.add_option('-l', '--rec_length', dest='rec_length', type='int', default=10,
-                      help='rec_length')
-    parser.add_option('-e', '--error_file', dest='error_file', type='string',
-                      help='error scan file')
-    parser.add_option('-r', '--range', dest='range', type='string', default='0-0',
-                      help='error scan file')
+    parser.add_option('-f', '--file', dest='file_path', type='string', help='Scan file you want to recognize')
+    parser.add_option('-c', '--config', dest='config', type='string', default="config.json", help='config file')
+    parser.add_option('-d', '--folder', dest='folder_path', type='string', help='Scan folder you want to recognize')
+    parser.add_option('-s', '--step', dest='step', type='int', default=10, help='step')
+    parser.add_option('-l', '--rec_length', dest='rec_length', type='int', default=10, help='rec_length')
+    parser.add_option('-e', '--error_file', dest='error_file', type='string', help='error scan file')
+    parser.add_option('-r', '--range', dest='range', type='string', default='0-0', help='error scan file')
+    parser.add_option('-w', '--with_duration', dest="with_duration", type='int', default=0, help='with_duration')
     (options, args) = parser.parse_args()
     start = int(options.range.split('-')[0])
     stop = int(options.range.split('-')[1])

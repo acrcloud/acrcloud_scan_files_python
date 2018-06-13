@@ -188,9 +188,12 @@ class ResultFilter:
             elif itype == 'custom':
                 db_play_offset_ms = result['metadata']['custom_files'][0][db_offset_key]
                 sample_play_offset_ms = result['metadata']['custom_files'][0][sample_offset_key]
+
+            return (int(sample_play_offset_ms)/1000.0, int(db_play_offset_ms)/1000.0)
         except Exception as e:
-            self._dlog.logger.error("Error@Get_DB_Play_Offset, error_data: {0}, {1}, {2}".format(offset_type, itype, data), exc_info=True)
-        return (int(sample_play_offset_ms)/1000.0, int(db_play_offset_ms)/1000.0)
+            #self._dlog.logger.error("Error@Get_DB_Play_Offset, error_data: {0}, {1}, {2}".format(offset_type, itype, data), exc_info=True)
+            self._dlog.logger.error("Error@please contact support@acrcloud.com to add offset config for your access_key")
+        return (None, None)
 
     def get_duration(self, end_timestamp, start_timestamp):
         end = datetime.datetime.strptime(end_timestamp, '%d %H:%M:%S')
@@ -215,6 +218,9 @@ class ResultFilter:
 
         end_sample_offset, end_db_offset = self.get_db_play_offset(end_data, 'end', itype)
         begin_sample_offset, begin_db_offset = self.get_db_play_offset(begin_data, 'begin', itype)
+        for i in [ end_sample_offset, end_db_offset, begin_sample_offset, begin_db_offset]:
+            if i is None:
+                return 0, 0, 0, begin_data["timestamp"]
 
         accurate_begin_timestamp = begin_data["timestamp"]
         #(begin_timestamp + relativedelta(seconds=int(float(begin_sample_offset)))).strftime("%Y-%m-%d %H:%M:%S")
