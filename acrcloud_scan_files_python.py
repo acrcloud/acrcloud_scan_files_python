@@ -1,227 +1,191 @@
 #!/usr/bin/env python
-# coding:utf-8
-from __future__ import print_function
+#-*- coding:utf-8 -*-
+
 import os
-import codecs
-import json
-from acrcloud.recognizer import ACRCloudRecognizer
+import sys
 import time
-from backports import csv
+import json
+import codecs
 import optparse
+import logging
+from backports import csv
+from acrcloud_filter import FilterWorker
+from acrcloud_logger import AcrcloudLogger
+from acrcloud.recognizer import ACRCloudRecognizer
 
+reload(sys)
+sys.setdefaultencoding("utf8")
 
-def get_tracks_artists(artists):
-    artists_namelist = []
-    for artist in artists:
-        artists_namelist.append(artist['name'])
-    space = ','
-    artists_names = space.join(artists_namelist)
-    return artists_names
+class ACRCloud_Scan_Files:
 
+    def __init__(self, config_file):
+        self.config = {
+            'host': '',
+            'access_key': '',
+            'access_secret': '',
+            'debug': False,
+            'timeout': 10  # seconds
+        }
+        self.config_file = config_file
+        self.init_log()
+        self.init_config()
 
-def set_config(config_file):
-    with codecs.open(config_file, 'r') as f:
-        json_config = json.loads(f.read())
-        host = json_config['host']
-        key = json_config['access_key']
-        secret = json_config['access_secret']
+    def init_log(self):
+        self.dlog = AcrcloudLogger('ACRCloud_ScanF', logging.INFO)
+        if not self.dlog.addFilehandler(logfile = "log_scan_files.log", logdir = "./", loglevel = logging.WARN):
+            sys.exit(1)
+        if not self.dlog.addStreamHandler():
+            sys.exit(1)
 
-    config = {
-        'host': str(host),
-        'access_key': str(key),
-        'access_secret': str(secret),
-        'debug': False,
-        'timeout': 10  # seconds
-    }
-    re = ACRCloudRecognizer(config)
-    return re
-
-
-def parse_data(current_time, metadata):
-    try:
-        title = metadata['music'][0]['title']
-    except:
-        title = ''
-    try:
-        offset = metadata['music'][0]['play_offset_ms']
-    except:
-        offset = ''
-    try:
-        isrc = metadata['music'][0]['external_ids']['isrc']
-    except:
-        isrc = ''
-    try:
-        upc = metadata['music'][0]['external_ids']['upc']
-    except:
-        upc = ''        
-    try:
-        acrid = metadata['music'][0]['acrid']
-    except:
-        acrid = ''
-    try:
-        label = metadata['music'][0]['label']
-    except:
-        label = ''
-    try:
-        album = metadata['music'][0]['album']['name']
-    except:
-        album = ''
-    try:
-        artists = get_tracks_artists(metadata['music'][0]['artists'])
-    except:
-        artists = ''
-    try:
-        dezzer = str(metadata['music'][0]['external_metadata']['deezer']['track']['id'])
-    except:
-        dezzer = ''
-    try:
-        spotify = str(metadata['music'][0]['external_metadata']['spotify']['track']['id'])
-    except:
-        spotify = ''
-    try:
-        itunes = str(metadata['music'][0]['external_metadata']['itunes']['track']['id'])
-    except:
-        itunes = ''
-    try:
-        youtube = metadata['music'][0]['external_metadata']['youtube']['vid']
-    except:
-        youtube = ''
-    try:
-        custom_files_title = metadata['custom_files'][0]['title']
-    except:
-        custom_files_title = ''
-    try:
-        audio_id = metadata['custom_files'][0]['audio_id']
-    except:
-        audio_id = ''
-    res = (current_time, title, artists, album, acrid,
-           offset, label, isrc, upc, dezzer, spotify, itunes,
-           youtube, custom_files_title, audio_id)
-    return res
-
-
-def recognize_file(filename, config_file,  start_time, stop_time, step, rec_length):
-    result = []
-    for i in range(start_time, stop_time, step):
-        filename, current_time, res_data = scan_file_part(filename, config_file, i, rec_length)
-        print(filename, current_time, res_data)
+    def init_config(self):
         try:
-            ret_dict = json.loads(res_data)
-            code = ret_dict['status']['code']
-            msg = ret_dict['status']['msg']
-            if 'metadata' in ret_dict:
-                metadata = ret_dict['metadata']
-                res = parse_data(current_time, metadata)
-                result.append(res)
-                print(res[1])
-            if code == 2005:
-                print('done!')
-                break
-            elif code == 1001:
-                print("No Result")
-            elif code == 3001:
-                print('Missing/Invalid Access Key')
-                break
-            elif code == 3003:
-                print('Limit exceeded')
-            elif code == 3000:
-                print(msg)
-                write_error(filename, i, 'NETWORK ERROR')
-            i += step
+            json_config = None
+            with codecs.open(self.config_file, 'r') as f:
+                json_config = json.loads(f.read())
+            for k in ["host", "access_key", "access_secret"]:
+                if k in json_config and json_config[k].strip():
+                    self.config[k] = str(json_config[k].strip())
+                else:
+                    self.dlog.logger.error("init_config.not found {0} from config.json, pls check".format(k))
+                    sys.exit(1)
+
+            self.re_handler = ACRCloudRecognizer(self.config)
+            if self.re_handler:
+                self.dlog.logger.warn("init_config success!")
         except Exception as e:
-            print(str(e))
-            write_error(filename, i, 'JSON ERROR')
-    return result
+            self.dlog.logger.error("init_config.error", exc_info=True)
 
+    def read_file(self, infile, jFirst=True):
+        with open(infile, "rb") as rfile:
+            for line in rfile:
+                if jFirst:
+                    jFirst = False
+                    continue
+                yield line.strip()
 
-def scan_file_main(option, start_time, stop_time):
-    target = option.file_path
-    step = option.step
-    rec_length = option.rec_length
-    config_file = option.config
-    if start_time == 0 and stop_time == 0:
-        results = recognize_file(target, config_file, start_time, int(ACRCloudRecognizer.get_duration_ms_by_file(target)/1000), step, rec_length)
-    else:
-        results = recognize_file(target, config_file, start_time, stop_time, step, rec_length)
-    filename = 'result-' + target.split('/')[-1].strip() + '.csv'
-    if os.path.exists(filename):
-        os.remove(filename)
-    if results:
-        with codecs.open(filename, 'w', 'utf-8-sig') as f:
-            fields = ['time', 'title', 'artists', 'album', 'acrid', 'play offset(ms)', 'label', 'isrc', 'upc', 'dezzer',
-                      'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
-            dw = csv.writer(f)
-            dw.writerow(fields)
-            dw.writerows(results)
+    def write_error(self, file_path, error_time, error_detail):
+        with open('error_scan.txt', 'a',) as f:
+            msg = file_path + '||' + str(error_time) + '||' + str(error_detail) + '\n'
+            f.write(msg)
 
+    def empty_error_scan(self):
+        if os.path.exists('error_scan.txt'):
+            os.remove('error_scan.txt')
 
-def scan_folder_main(option, start_time, stop_time):
-    path = option.folder_path
-    file_list = os.listdir(path)
-    for i in file_list:
-        option.file_path = path + '/' + i
-        scan_file_main(option, start_time, stop_time)
+    def parse_data(self, current_time, metadata):
+        try:
+            title, offset, isrc, upc, acrid, label, album = [""]*7
+            artists, deezer, spotify, itunes, youtube, custom_files_title, audio_id  = [""]*7
+            if "music" in metadata and len(metadata["music"]) > 0:
+                item = metadata["music"][0]
+                title = item.get("title", "")
+                offset = item.get("play_offset_ms", "")
+                isrc = item.get("external_ids", {"isrc":""}).get("isrc","")
+                upc = item.get("external_ids", {"upc":""}).get("upc","")
+                acrid = item.get("acrid","")
+                label = item.get("label", "")
+                album = item.get("album", {"name":""}).get("name", "")
+                artists =  ",".join([ ar["name"] for ar in item.get('artists', [{"name":""}]) if ar.get("name") ])
+                deezer = item.get("external_metadata", {"deezer":{"track":{"id":""}}}).get("deezer", {"track":{"id":""}}).get("track", {"id":""}).get("id", "")
+                spotify = item.get("external_metadata", {"spotify":{"track":{"id":""}}}).get("spotify", {"track":{"id":""}}).get("track", {"id":""}).get("id", "")
+                itunes = item.get("external_metadata", {"itunes":{"track":{"id":""}}}).get("itunes", {"track":{"id":""}}).get("track", {"id":""}).get("id", "")
+                youtube = item.get("external_metadata", {"youtube":{"vid":""}}).get("youtube", {"vid":""}).get("vid", "")
 
+            if "custom_files" in metadata and len(metadata["custom_files"]) > 0:
+                custom_item = metadata["custom_files"][0]
+                custom_files_title = custom_item.get("title", "")
+                audio_id = custom_item.get("audio_id", "")
+        except Exception as e:
+            self.dlog.logger.error("parse_data.error.data:{0}".format(metadata), exc_info=True)
 
-def empty_error_scan():
-    if os.path.exists('error_scan.txt'):
-        os.remove('error_scan.txt')
+        res = (current_time, title, artists, album, acrid, offset, label, isrc, upc,
+                deezer, spotify, itunes, youtube, custom_files_title, audio_id)
+        return res
 
+    def do_recognize(self, filepath, start_time, rec_length):
+        try:
+            current_time = time.strftime('%d %H:%M:%S', time.gmtime(start_time))
+            res_data = self.re_handler.recognize_by_file(filepath, start_time, rec_length)
+            return filepath, current_time, res_data
+        except Exception as e:
+            self.dlog.logger.error("do_recognize.error.({0}, {1}, {})".format(filepath,start_time,rec_length),exc_info=True)
+        return filepath, current_time, None
 
-def scan_file_part(path, config_file, start_time, rec_length):
-    current_time = time.strftime('%H:%M:%S', time.gmtime(start_time))
-    re = set_config(config_file)
-    res_data = re.recognize_by_file(path, start_time, rec_length)
-    return path, current_time, res_data
+    def recognize_file(self, filepath, start_time, stop_time, step, rec_length):
+        self.dlog.logger.warn("scan_file.start_to_run: {0}".format(filepath))
 
+        fname = os.path.basename(filepath)
+        fworker = FilterWorker("./", "result-"+fname+"_with_duration.csv")
 
-def write_error(file_path, error_time, error_detail):
-    with open('error_scan.txt', 'a',) as f:
-        msg = file_path + '||' + str(error_time) + '||' + str(error_detail) + '\n'
-        print(msg)
-        f.write(msg)
-
-
-def scan_txt_file(options):
-    file_path = options.error_file
-    rec_length = options.rec_length
-    config_file = options.config
-    with codecs.open(file_path, 'r', 'utf-8') as f:
-        tasks = f.readlines(file_path)
-    for task in tasks:
         result = []
-        error_task = task.split('||')
-        task_file, task_time = error_task[0].encode('utf-8'), int(error_task[1])
-        path, current_time, res_data = scan_file_part(task_file, config_file, task_time, rec_length)
-        result_file_name = 'result-error_scan.csv'
-        print(file_path, current_time)
+        for i in range(start_time, stop_time, step):
+            filep, current_time, res_data = self.do_recognize(filepath, i, rec_length)
+            try:
+                ret_dict = json.loads(res_data)
+                code = ret_dict['status']['code']
+                msg = ret_dict['status']['msg']
+                if 'metadata' in ret_dict:
+                    metadata = ret_dict['metadata']
+                    res = self.parse_data(current_time, metadata)
+                    result.append(res)
+                    fworker.do_filter(fname, ret_dict, rec_length, current_time)
+                    self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[1]))
+                if code == 2005:
+                    self.dlog.logger.warn('recognize_file.(time:{0}, Done!)'.format(current_time, code))
+                    break
+                elif code == 1001:
+                    self.dlog.logger.info("recognize_file.(time:{0}, No_Result)".format(current_time, code))
+                    fworker.do_filter(fname, ret_dict, rec_length, current_time)
+                elif code == 3001:
+                    self.dlog.logger.error('recognize_file.(time:{0}, Missing/Invalid Access Key)'.format(current_time, code))
+                    break
+                elif code == 3003:
+                    self.dlog.logger.error('recognize_file.(time:{0}, Limit exceeded)'.format(current_time, code))
+                elif code == 3000:
+                    self.dlog.logger.error('recognize_file.(time:{0}, {1}, {2})'.format(current_time, code, msg))
+                    self.write_error(filename, i, 'NETWORK ERROR')
+                i += step
+            except Exception as e:
+                self.dlog.logger.error('recognize_file.error', exc_info=True)
+                self.write_error(filepath, i, 'JSON ERROR')
+        fworker.end_filter(fname, rec_length, current_time)
+        return result
+
+
+    def scan_file_main(self, option, start_time, stop_time):
         try:
-            ret_dict = json.loads(res_data)
-            code = ret_dict['status']['code']
-            msg = ret_dict['status']['msg']
-            if 'metadata' in ret_dict:
-                metadata = ret_dict['metadata']
-                res = parse_data(current_time, metadata)
-                result.append(res)
-                if result:
-                    with codecs.open(result_file_name, 'a', 'utf-8-sig') as f:
-                        dw = csv.writer(f)
-                        dw.writerows(result)
-                print(res[1])
-            if code == 2005:
-                print('done!')
-                break
-            elif code == 1001:
-                print("No Result")
-            elif code == 3001:
-                print('Missing/Invalid Access Key')
-                break
-            elif code == 3003:
-                print('Limit exceeded')
-            elif code == 3000:
-                print(msg)
+            filepath = option.file_path
+            step = option.step
+            rec_length = option.rec_length
+            if start_time == 0 and stop_time == 0:
+                file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
+                results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length)
+            else:
+                results = self.recognize_file(filepath, start_time, stop_time, step, rec_length)
+
+            filename = 'result-' + os.path.basename(filepath.strip()) + '.csv'
+            if os.path.exists(filename):
+                os.remove(filename)
+            if results:
+                with codecs.open(filename, 'w', 'utf-8-sig') as f:
+                    fields = ['time', 'title', 'artists', 'album', 'acrid', 'play offset(ms)', 'label', 'isrc', 'upc',
+                              'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
+                    dw = csv.writer(f)
+                    dw.writerow(fields)
+                    dw.writerows(results)
         except Exception as e:
-            print(str(e))
+            self.dlog.logger.error("scan_file_main.error", exc_info=True)
+
+
+    def scan_folder_main(self, option, start_time, stop_time):
+        try:
+            path = option.folder_path
+            file_list = os.listdir(path)
+            for i in file_list:
+                option.file_path = path + '/' + i
+                self.scan_file_main(option, start_time, stop_time)
+        except Exception as e:
+            self.dlog.logger.error("scan_folder_main.error", exc_info=True)
 
 
 if __name__ == '__main__':
@@ -262,13 +226,13 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     start = int(options.range.split('-')[0])
     stop = int(options.range.split('-')[1])
+
+    asf = ACRCloud_Scan_Files(options.config)
     if options.file_path:
-        empty_error_scan()
-        scan_file_main(options, start, stop)
+        asf.empty_error_scan()
+        asf.scan_file_main(options, start, stop)
     elif options.folder_path:
-        empty_error_scan()
-        scan_folder_main(options, start, stop)
-    elif options.error_file:
-        scan_txt_file(options)
+        asf.empty_error_scan()
+        asf.scan_folder_main(options, start, stop)
     else:
         print(usage)
