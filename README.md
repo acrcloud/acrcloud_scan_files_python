@@ -103,12 +103,12 @@ pip install -r requirements.txt
 
 "-c" ---- set the config file path.
 
-"-w" ---- results with duration. (1-yes, 0-no)
+"-w" ---- results with duration. (1-yes, 0-no), you must set offset config for your access key, pls contact support@acrcloud.com
  ```
  If you want to change scan interval or you want to set recognize range,you can add some params
  Example:
      python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30 -r 0-20
-     python acrcloud_scan_files_python.py -d ~/music -s 30
+     python acrcloud_scan_files_python.py -d ~/music -s 30 -w 1
  ```
 ## Scan error_scan file
 
