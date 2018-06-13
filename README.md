@@ -102,6 +102,8 @@ pip install -r requirements.txt
 "-l" ---- use how many seconds to recongize.  (recongizing length)
 
 "-c" ---- set the config file path.
+
+"-w" ---- results with duration. (1-yes, 0-no)
  ```
  If you want to change scan interval or you want to set recognize range,you can add some params
  Example:
