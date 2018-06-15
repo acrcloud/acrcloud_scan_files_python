@@ -162,7 +162,7 @@ class ACRCloud_Scan_Files:
             filepath = option.file_path
             step = option.step
             rec_length = option.rec_length
-            with_duration = option.with_duation
+            with_duration = option.with_duration
             if start_time == 0 and stop_time == 0:
                 file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
                 results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length, with_duration)
