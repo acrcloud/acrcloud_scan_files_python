@@ -312,7 +312,7 @@ class ResultFilter:
         for i in range(his_list_num-1, -1, -1):
             if self._real_custom[stream_id][0][i][0] == title:
                 his_timestamp = self._real_custom[stream_id][0][i][1]
-                his_time_obj = datetime.datetime.strptime(his_timestamp, '%Y-%m-%d %H:%M:%S')
+                his_time_obj = datetime.datetime.strptime(his_timestamp, '%d %H:%M:%S')
                 if (now_timestamp - his_time_obj).total_seconds() <= self._real_custom_valid_interval:
                     return True
             if title == NORESULT:
@@ -693,8 +693,8 @@ class ResultFilter:
             ret_title = self.get_mutil_result_title(retdata, 'music', 1)[0]
             if self._delay_music_last_result.has_key(stream_id):
                 if ret_title == self._delay_music_last_result[stream_id][0]:
-                    ret_time_obj = datetime.datetime.strptime(ret_timestamp, '%Y-%m-%d %H:%M:%S')
-                    last_time_obj = datetime.datetime.strptime(self._delay_music_last_result[stream_id][1], '%Y-%m-%d %H:%M:%S')
+                    ret_time_obj = datetime.datetime.strptime(ret_timestamp, '%d %H:%M:%S')
+                    last_time_obj = datetime.datetime.strptime(self._delay_music_last_result[stream_id][1], '%d %H:%M:%S')
                     if (ret_time_obj - last_time_obj).total_seconds() < 5*60:
                         retdata = None
                 else:
@@ -728,7 +728,7 @@ class ResultFilter:
 
         stream_id = data.get("stream_id")
         timestamp = data.get("timestamp")
-        timestamp_obj = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+        timestamp_obj = datetime.datetime.strptime(timestamp, "%d %H:%M:%S")
         if not stream_id:
             return result, is_new
         if curr_title == NORESULT:
