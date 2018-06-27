@@ -117,7 +117,7 @@ class ACRCloud_Scan_Files:
         if with_duration == 1:
             self.dlog.logger.warn("results with duration...")
             fname = os.path.basename(filepath)
-            fworker = FilterWorker("./", "result-"+fname+"_with_duration.csv")
+            fworker = FilterWorker("./", "result-"+fname+"_with_duration.xlsx")
 
         result = []
         for i in range(start_time, stop_time, step):
