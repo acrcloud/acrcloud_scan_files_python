@@ -717,7 +717,7 @@ class ResultFilter:
                 if diff_ret_duration < 0 and abs(diff_ret_duration) >= 60:
                     ret_duration = duration_accurate
                     #self._dlog.logger.warn("Warn@stream_id:{0}, mix_duration({1}) > duration_s({2})+60, replace to duration_accurate({3})".format(stream_id, mix_duration, duration_s, duration_accurate))
-            retdata['result']['metadata']['played_duration'] = ret_duration
+            retdata['result']['metadata']['played_duration'] = abs(ret_duration)
             retdata['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
         return retdata
 
@@ -910,7 +910,7 @@ class ResultFilter:
             db_duration = duration_dict["db_duration"]
             mix_duration = duration_dict["mix_duration"]
             accurate_timestamp_utc = duration_dict["accurate_timestamp_utc"]
-            ret_data['result']['metadata']['played_duration'] = mix_duration
+            ret_data['result']['metadata']['played_duration'] = abs(mix_duration)
             ret_data['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
             if ret_data['result']['metadata']['played_duration'] <= self._delay_custom_played_duration_min:
                 ret_data = None
