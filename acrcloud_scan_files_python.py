@@ -147,7 +147,7 @@ class ACRCloud_Scan_Files:
                     self.dlog.logger.error('recognize_file.(time:{0}, Limit exceeded)'.format(current_time, code))
                 elif code == 3000:
                     self.dlog.logger.error('recognize_file.(time:{0}, {1}, {2})'.format(current_time, code, msg))
-                    self.write_error(filename, i, 'NETWORK ERROR')
+                    self.write_error(filepath, i, 'NETWORK ERROR')
                 i += step
             except Exception as e:
                 self.dlog.logger.error('recognize_file.error', exc_info=True)
