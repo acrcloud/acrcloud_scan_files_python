@@ -96,7 +96,7 @@ pip install -r requirements.txt
  python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3
  ```
  
-## Add more params
+### Add more params
 "-s" ---- scan step. （The scan interval.）
 
 "-r" ---- scan range. （The scan range.）
@@ -118,11 +118,11 @@ Default is scan folder where this script in.
 The results are saved in the folder where this script in.
 
 
-# Usage for Scan File Libary
+## Usage for Scan File Libary
 
 Introduction all API.
 
-## acrcloud_scan_files_libary.py
+### acrcloud_scan_files_libary.py
 
  ```
  class ACRCloud_Scan_Files:
@@ -148,7 +148,7 @@ Introduction all API.
      #@pass
  ```
 
-##Example
+###Example
 
 run Text: python example.py test.mp3
 
