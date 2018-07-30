@@ -13,6 +13,8 @@
 ## Requirements
 
 - Python
+- fuzzywuzzy
+- openpyxl
 - backports.csv
 - requests
 - Follow one of the tutorials to create a project and get your host, access_key and access_secret.
@@ -59,7 +61,7 @@ pip install -r requirements.txt
  x64: [download and install Library(windows/vcredist_x64.exe)](https://www.microsoft.com/en-us/download/details.aspx?id=14632)
 
  
-## Usage: 
+## Usage for Scan File Tool: 
 
         _    ____ ____   ____ _                 _
        / \  / ___|  _ \ / ___| | ___  _   _  __| |
@@ -109,16 +111,101 @@ pip install -r requirements.txt
  Example:
      python acrcloud_scan_files_python.py -f ~/testfiles/test.mp3 -s 30 -r 0-20
      python acrcloud_scan_files_python.py -d ~/music -s 30 -w 1
- ```
-## Scan error_scan file
-
- ```
- When Scan program  occurs some errors,error detail will store in error_scan.txt,When the scan tasks are finished, you can rescan these error task.
- Example: 
-    python acrcloud_scan_files_python.py -e error_scan.txt
- ```
 
 Default is scan folder where this script in.
 
 The results are saved in the folder where this script in.
 
+
+# Usage for Scan File Libary
+
+Introduction all API.
+
+## acrcloud_scan_files_libary.py
+
+```python
+class ACRCloud_Scan_Files:
+    def get_duration_by_file(self, filepath):
+    #@pass
+
+    def export_to_xlsx(self, result_list, export_filename="ACRCloud_ScanFile_Results.xlsx", export_dir="./"):
+    #@pass
+
+    def export_to_csv(self, result_list, export_filename="ACRCloud_ScanFile_Results.csv", export_dir="./"):
+    #@pass
+
+    def parse_data(self, jsoninfo):
+    #@pass
+
+    def apply_filter(self, results):
+    #@pass
+
+    def for_recognize_file(self,  filepath, start_time, stop_time, step, rec_length):
+    #@pass
+
+    def recognize_file(self, filepath, start_time, stop_time, step, rec_length):
+    #@pass
+```
+
+##Example
+
+run Text: python example.py test.mp3
+
+```python
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+import os
+import sys
+from acrcloud_scan_files_libary import ACRCloud_Scan_Files
+
+if __name__ == "__main__":
+
+#ACRCloud Scan File Example
+is_debug = 1   #display the log info, or is_debug=0
+start_time = 0 #scan file start time(seconds)
+stop_time = 0  #scan file end time(seconds), or you can set it to the duration of file
+step = 10      #the length of each identified fragment (seconds)
+rec_length = step
+
+#your acrcloud project host, access_key, access_secret
+config = {
+    "host": "identify-ap-southeast-1.acrcloud.com",
+    "access_key":"e85818d71cd5ee3814db6d517c4a4a0a",
+    "access_secret": "4nH4eEfEIrR0bdO1FmrRvweUJ6NK735iNqMorVan"
+}
+
+filepath = sys.argv[1]
+
+acr_sfile = ACRCloud_Scan_Files(config, is_debug)
+
+stop_time = acr_sfile.get_duration_by_file(filepath)
+
+#get a list of recognition results
+result_list = acr_sfile.recognize_file(filepath, start_time, stop_time, step, rec_length)
+
+#export the result
+export_dir = "./"
+#export to csv
+export_filename_csv = "test.csv"
+acr_sfile.export_to_csv(result_list, export_filename_csv, export_dir)
+#export to xlsx
+export_filename_xlsx = "test.xlsx"
+acr_sfile.export_to_xlsx(result_list, export_filename_xlsx, export_dir)
+
+#iterator to get the result of each fragment
+result_list2 = []
+for item in acr_sfile.for_recognize_file(filepath, start_time, stop_time, step, rec_length):
+    result_list2.append(item)
+    filename = item["file"]
+    timestamp = item["timestamp"]
+    res = acr_sfile.parse_data(item["result"])
+    title = res[0]
+    print filename, timestamp, title
+
+#get results with played-duration
+filter_results = acr_sfile.apply_filter(result_list2)
+#export the results to xlsx
+export_filtername_xlsx = "test_with_duration.xlsx"
+acr_sfile.export_to_xlsx(filter_results, export_filtername_xlsx, export_dir)
+```

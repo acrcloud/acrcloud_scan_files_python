@@ -6,15 +6,11 @@ import sys
 import json
 import copy
 import math
-import redis
-import MySQLdb
 import datetime
-import threading
 import traceback
 import tools_str_sim
 import acrcloud_logger
 from dateutil.relativedelta import *
-from openpyxl import Workbook  #for excel
 
 reload(sys)
 sys.setdefaultencoding("utf8")
@@ -23,9 +19,8 @@ NORESULT = "noResult"
 
 class ResultFilter:
 
-    def __init__(self, dlog, log_dir):
+    def __init__(self, dlog):
         self._dlog = dlog
-        self._log_dir = log_dir
         self._real_music = {}
         self._real_music_list_num = 3
         self._real_custom = {}
@@ -191,7 +186,6 @@ class ResultFilter:
 
             return (int(sample_play_offset_ms)/1000.0, int(db_play_offset_ms)/1000.0)
         except Exception as e:
-            #self._dlog.logger.error("Error@Get_DB_Play_Offset, error_data: {0}, {1}, {2}".format(offset_type, itype, data), exc_info=True)
             self._dlog.logger.error("Error@please contact support@acrcloud.com to add offset config for your access_key")
         return (None, None)
 
@@ -201,7 +195,7 @@ class ResultFilter:
         return (end - start).total_seconds()
 
     def get_duration_accurate(self, end_data, start_data, itype='music'):
-        monitor_len = end_data.get('monitor_seconds', 10)
+        monitor_len = end_data.get('rec_length', 10)
         end_play_offset = self.get_play_offset(end_data, itype)
         start_play_offset = self.get_play_offset(start_data, itype)
         pre_seconds = max(20, monitor_len*2)
@@ -212,9 +206,9 @@ class ResultFilter:
         return int(round(end_play_offset - start_play_offset))
 
     def get_duration_accurate_use_db_offset(self, end_data, begin_data, isize, itype='music'):
-        #begin_timestamp = datetime.datetime.strptime(begin_data['timestamp'], "%Y-%m-%d %H:%M:%S")
+        begin_timestamp = datetime.datetime.strptime(begin_data['timestamp'], "%d %H:%M:%S")
 
-        monitor_len = end_data.get('monitor_seconds', 10)
+        monitor_len = end_data.get('rec_length', 10)
 
         end_sample_offset, end_db_offset = self.get_db_play_offset(end_data, 'end', itype)
         begin_sample_offset, begin_db_offset = self.get_db_play_offset(begin_data, 'begin', itype)
@@ -222,8 +216,7 @@ class ResultFilter:
             if i is None:
                 return 0, 0, 0, begin_data["timestamp"]
 
-        accurate_begin_timestamp = begin_data["timestamp"]
-        #(begin_timestamp + relativedelta(seconds=int(float(begin_sample_offset)))).strftime("%Y-%m-%d %H:%M:%S")
+        accurate_begin_timestamp = (begin_timestamp + relativedelta(seconds=int(float(begin_sample_offset)))).strftime("%d %H:%M:%S")
 
         db_len = int(round(end_db_offset - begin_db_offset))
         sample_len = int(round(end_sample_offset - begin_sample_offset + (isize-1)*monitor_len))
@@ -325,7 +318,7 @@ class ResultFilter:
             return False
         sim, detail = tools_str_sim.str_sim(curr_title, his_title)
         if not sim and curr_title != NORESULT and his_title != NORESULT:
-            self._dlog.logger.info("Sim@StreamID: {0}, CurrTitle: {1}, HisTitle: {2}({3}), Sim: {4}".format(str(stream_id), curr_title, his_title, str(idx), str(detail)))
+            pass
         return sim
 
     def checkSame(self, curr_title, stream_id):
@@ -374,7 +367,6 @@ class ResultFilter:
         new_title, try_status = self.tryStrSub(title)
         if try_status:
             self.updateResultTitle(data, new_title)
-            self._dlog.logger.info("StreamID: {0}, Update Title: [{1}] >>> [{2}]".format(stream_id, title, new_title))
             return new_title
         return title
 
@@ -471,9 +463,6 @@ class ResultFilter:
         return ret_dict
 
     def get_data_duration_ms(self, data):
-        '''
-        获取结果的入库duration_ms
-        '''
         try:
             duration_ms = -1
             json_res = data["result"]
@@ -499,8 +488,6 @@ class ResultFilter:
         history_data = self._delay_music[stream_id]
 
         if len(history_data) >= self._delay_list_threshold:
-            self._dlog.logger.error("delay_music[{0}] list num({1}) over threshold {2}".format(stream_id, len(history_data), self._delay_list_threshold))
-            self._dlog.logger.error("delay_music[{0}] data: \n{1}".format(stream_id, '\n'.join([str(item[:-1]) for item in history_data])))
             history_data = history_data[-self._delay_list_max_num:]
 
         sim_title_set = set()
@@ -711,12 +698,11 @@ class ResultFilter:
             accurate_timestamp_utc = duration_dict["accurate_timestamp_utc"]
 
             ret_duration = mix_duration
-            duration_s = self.get_data_duration_ms(retdata) #获取歌曲的长度
+            duration_s = self.get_data_duration_ms(retdata)
             if duration_s != -1:
                 diff_ret_duration = duration_s - ret_duration
                 if diff_ret_duration < 0 and abs(diff_ret_duration) >= 60:
                     ret_duration = duration_accurate
-                    #self._dlog.logger.warn("Warn@stream_id:{0}, mix_duration({1}) > duration_s({2})+60, replace to duration_accurate({3})".format(stream_id, mix_duration, duration_s, duration_accurate))
             retdata['result']['metadata']['played_duration'] = abs(ret_duration)
             retdata['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
         return retdata
@@ -815,9 +801,6 @@ class ResultFilter:
         history_data = self._delay_custom[stream_id]
 
         if len(history_data) >= self._delay_list_threshold:
-            self._dlog.logger.error("delay_custom[{0}] list num({1}) over threshold {2}".format(stream_id, len(history_data), self._delay_list_threshold))
-            self._dlog.logger.error("delay_custom[{0}] data: \n{1}".format(stream_id, '\n'.join(["{0}: {1}".format(i, str(item[:-1])) for i,item in enumerate(history_data)])))
-
             history_data = history_data[-(self._delay_list_threshold-1):]
 
             history_data_len = len(history_data)
@@ -892,7 +875,7 @@ class ResultFilter:
                         first_item_flag = False
                         ret_data = copy.deepcopy(from_data)
                         ret_data["result"]["metadata"]["custom_files"] = []
-                    self.custom_result_append(ret_data, dtitle, from_data, scount, tmp_deal_title_map) #为每个title添加count
+                    self.custom_result_append(ret_data, dtitle, from_data, scount, tmp_deal_title_map)
 
             index_range = set()
             for title in deal_title_map:
@@ -946,111 +929,15 @@ class ResultFilter:
         return ret_data
 
 class FilterWorker:
-    def __init__(self, log_dir, outfile):
+    def __init__(self):
         self.tmp_no_result = {'status': {'msg': 'No result', 'code': 1001, 'version': '1.0'}, 'metadata': {}}
-        self._log_dir = log_dir
-        self._outfile = outfile
-        self._result_map = {"music":[], "custom":[]}
+        self._result_map = []
         self.init_logger()
-        self._result_filter = ResultFilter(self.dlog, self._log_dir)
+        self._result_filter = ResultFilter(self.dlog)
 
     def init_logger(self):
         self.dlog = acrcloud_logger.AcrcloudLogger('Filter_Log')
-        self.dlog.addFilehandler('filter_Log.log', logdir=self._log_dir)
         self.dlog.addStreamHandler()
-
-    def parse_result(self, result):
-        try:
-            ret = {}
-            ret_type = None
-            if result["status"]["code"] == 0:
-                if "music" in result["metadata"]:
-                    ret_type = "music"
-                    item = result["metadata"]["music"][0]
-                    ret["timestamp"] = result["metadata"]["timestamp_utc"]
-                    ret["title"] = item["title"]
-                    ret["artist"] = item.get("artists", [{"name":""}])[0]["name"]
-                    ret["album"] = item.get("album", {"name":""})["name"]
-                    ret["acrid"] = item["acrid"]
-                    ret["duration"] = str(int(item["duration_ms"]/1000))
-                    ret["played_duration"] = str(result["metadata"].get("played_duration", 0))
-                    ret["label"] = item.get("label", "")
-                    ret["isrc"] = item.get("external_ids", {"isrc":""}).get("isrc", "")
-                    ret["deezer"] = item.get("external_metadata", {"deezer":{"track":{"id":""}}}).get("deezer", {"track":{"id":""}})["track"]["id"]
-                    ret["spotify"] = item.get("external_metadata", {"spotify":{"track":{"id":""}}}).get("spotify", {"track":{"id":""}})["track"]["id"]
-                    ret["itunes"] = ""
-                    ret["ret_type"] = ret_type
-                elif "custom_files" in result["metadata"]:
-                    ret_type = "custom"
-                    item = result["metadata"]["custom_files"][0]
-                    ret["timestamp"] = result["metadata"]["timestamp_utc"]
-                    ret["played_duration"] = result["metadata"]["played_duration"]
-                    ret["title"] = item["title"]
-                    ret["acrid"] = item["acrid"]
-                    ret["duration"] = str(int(item["duration_ms"])/1000)
-                    ret["score"] = item["score"]
-                    ret["bucket_id"] = item["bucket_id"]
-                    ret["ret_type"] = ret_type
-                return ret
-        except Exception as e:
-            traceback.print_exc()
-        return ret
-
-    def as_text(self, value):
-        if value is None:
-            return ""
-        return str(value)
-
-    def save_as_csv(self):
-        try:
-            music_sheet = [('No', 'Timestamp', 'Title', 'Artist', 'Album', 'ACRID', 'Duration', 'Played_Duration', 'Label', 'ISRC', 'Deezer', 'Spotify', 'iTunes')]
-            custom_sheet = [('No', 'Timestamp', 'Title', 'ACRID', 'Duration', 'Played_Duration')]
-            music_count = 0
-            custom_count = 0
-            for k in ["music", "custom"]:
-                for item in self._result_map[k]:
-                    try:
-                        jsoninfo = item["result"]
-                        jr = self.parse_result(jsoninfo)
-                        if not jr:
-                            continue
-                        if jr["ret_type"] == "music":
-                            music_sheet.append([music_count, jr["timestamp"], jr["title"], jr["artist"], jr["album"], jr["acrid"],jr["duration"], jr["played_duration"], jr["label"], jr["isrc"], jr["deezer"], jr["spotify"], jr["itunes"]])
-                            music_count += 1
-                        elif jr["ret_type"] == "custom":
-                            custom_sheet.append([custom_count, jr["timestamp"], jr["title"], jr["acrid"], jr["duration"], jr["played_duration"]])
-                            custom_count += 1
-                    except Exception as e:
-                        self.dlog.logger.error("save_as_csv.parse_data:{0}".format(item), exc_info=True)
-                        print jsoninfo
-                        raw_input("lasjfdlsk")
-
-            wb = Workbook()
-            sheet_music = wb.active
-            sheet_music.title = "music"
-            for row in music_sheet:
-                sheet_music.append(row)
-
-            for column_cells in sheet_music.columns:
-                length = max(len(self.as_text(cell.value)) for cell in column_cells)
-                if length > 80:
-                    length == 80
-                sheet_music.column_dimensions[column_cells[0].column].width = length
-
-            if len(custom_sheet) > 1:
-                sheet_custom = wb.create_sheet("custom")
-                for row in custom_sheet:
-                    sheet_custom.append(row)
-
-                for column_cells in sheet_custom.columns:
-                    length = max(len(self.as_text(cell.value)) for cell in column_cells)
-                    if length > 80:
-                        length == 80
-                    sheet_custom.column_dimensions[column_cells[0].column].width = length
-            wb.save(self._outfile)
-            self.dlog.logger.warn("Save Data to xlsx: {0}".format(self._outfile))
-        except Exception as e:
-            self.dlog.logger.error("Error@save_as_csv", exc_info=True)
 
     def save_one_delay(self, old_data, isCustom=0):
         data = None
@@ -1060,10 +947,8 @@ class FilterWorker:
             data = self._result_filter.deal_delay_history(old_data)
 
         if data is not None:
-            if isCustom:
-                self._result_map["custom"].append(data)
-            else:
-                self._result_map["music"].append(data)
+            del data["stream_id"]
+            self._result_map.append(data)
             return True
         else:
             return False
@@ -1097,14 +982,14 @@ class FilterWorker:
                 ret = self.save_one_delay(jsondata, 0)
         except Exception as e:
             self.dlog.logger.error("Error@save_one", exc_info=True)
-            self.dlog.logger.error("Error_Data:{0}, {1}".format(jsondata.get('stream_id'), jsondata.get('result')))
         return ret
 
-    def do_filter(self, filepath, result, rec_length, timestamp):
+    def do_filter(self, tmp_id, filepath, result, rec_length, timestamp):
         try:
             jsoninfo = {
-                "stream_id": filepath,
-                "monitor_seconds": rec_length,
+                "stream_id": tmp_id,
+                "file":filepath,
+                "rec_length": rec_length,
                 "result": result,
                 "timestamp": timestamp
             }
@@ -1112,25 +997,52 @@ class FilterWorker:
         except Exception as e:
             self.dlog.logger.error("Error@do_filter", exc_info=True)
 
-    def end_filter(self, filepath, rec_length, timestamp):
+    def end_filter(self, tmp_id, rec_length, timestamp):
         try:
             tmp_no_result = copy.deepcopy(self.tmp_no_result)
             for i in range(1, 30):
                 tmp_timestamp = datetime.datetime.strptime(timestamp, "%d %H:%M:%S")
                 new_timestamp = (tmp_timestamp + relativedelta(seconds=int(i*rec_length))).strftime("%d %H:%M:%S")
                 jsoninfo = {
-                    "stream_id": filepath,
-                    "monitor_seconds": rec_length,
+                    "stream_id": tmp_id,
+                    "rec_length": rec_length,
                     "result": tmp_no_result,
                     "timestamp": new_timestamp
                 }
                 self.save_one(jsoninfo)
-            self.save_as_csv()
         except Exception as e:
             self.dlog.logger.error("Error@end_filter", exc_info=True)
 
-if __name__ == "__main__":
-    outfile = sys.argv[2]
-    logdir = "./"
-    bu = FilterWorker(logdir, outfile)
+    def start_filter(self, tmp_id, rec_length, timestamp):
+        try:
+            tmp_no_result = copy.deepcopy(self.tmp_no_result)
+            for i in range(1, 0, -1):
+                new_timestamp = timestamp
+                jsoninfo = {
+                    "stream_id": tmp_id,
+                    "rec_length": rec_length,
+                    "result": tmp_no_result,
+                    "timestamp": new_timestamp
+                }
+                self.save_one(jsoninfo)
+        except Exception as e:
+            self.dlog.logger.error("Error@start_filter", exc_info=True)
+
+    def apply_filter(self, result_list):
+        try:
+            appid = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+
+            for index, item in enumerate(result_list):
+                filename = item["file"]
+                timestamp = item["timestamp"]
+                rec_length = item["rec_length"]
+                if index == 0:
+                    self.start_filter(appid, rec_length, timestamp)
+                result = item["result"]
+                if "status" in result and result["status"]["code"] in [0, 1001]:
+                    self.do_filter(appid, filename, result, rec_length, timestamp)
+            self.end_filter(appid, rec_length, timestamp)
+        except Exception as e:
+            self.dlog.logger.error("Error@apply_filter", exc_info=True)
+        return self._result_map
 

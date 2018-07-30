@@ -9,8 +9,8 @@ import codecs
 import optparse
 import logging
 from backports import csv
-from acrcloud_filter import FilterWorker
 from acrcloud_logger import AcrcloudLogger
+from acrcloud_filter_libary import FilterWorker
 from acrcloud.recognizer import ACRCloudRecognizer
 
 reload(sys)
@@ -72,10 +72,37 @@ class ACRCloud_Scan_Files:
         if os.path.exists('error_scan.txt'):
             os.remove('error_scan.txt')
 
-    def parse_data(self, current_time, metadata):
+    def export_to_csv(self, result_list, export_filename="ACRCloud_ScanFile_Results.csv", export_dir="./"):
         try:
-            title, offset, isrc, upc, acrid, label, album = [""]*7
+            results = []
+            for item in result_list:
+                filename = item["file"]
+                timestamp = item["timestamp"]
+                jsoninfo = item["result"]
+                if "status" in jsoninfo and jsoninfo["status"]["code"] == 0:
+                    row = self.parse_data(jsoninfo)
+                    row = [filename, timestamp] + list(row)
+                    results.append(row)
+
+            export_filepath = os.path.join(export_dir, export_filename)
+
+            with codecs.open(export_filepath, 'w', 'utf-8-sig') as f:
+                head_row = ['filename', 'timestamp', 'title', 'artists', 'album', 'acrid', 'played_duration', 'label',
+                            'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
+                dw = csv.writer(f)
+                dw.writerow(head_row)
+                dw.writerows(results)
+                self.dlog.logger.info("export_to_csv.Save Data to csv: {0}".format(export_filepath))
+        except Exception as e:
+            self.dlog.logger.error("Error export_to_csv", exc_info=True)
+
+    def parse_data(self, jsoninfo):
+        try:
+            title, played_duration, isrc, upc, acrid, label, album = [""]*7
             artists, deezer, spotify, itunes, youtube, custom_files_title, audio_id  = [""]*7
+
+            metadata = jsoninfo.get('metadata', {})
+            played_duration = metadata.get("played_duration", "")
             if "music" in metadata and len(metadata["music"]) > 0:
                 item = metadata["music"][0]
                 title = item.get("title", "")
@@ -98,9 +125,14 @@ class ACRCloud_Scan_Files:
         except Exception as e:
             self.dlog.logger.error("parse_data.error.data:{0}".format(metadata), exc_info=True)
 
-        res = (current_time, title, artists, album, acrid, offset, label, isrc, upc,
-                deezer, spotify, itunes, youtube, custom_files_title, audio_id)
+        res = (title, artists, album, acrid, played_duration, label, isrc, upc,
+               deezer, spotify, itunes, youtube, custom_files_title, audio_id)
         return res
+
+    def apply_filter(self, results):
+        fworker = FilterWorker()
+        result_new = fworker.apply_filter(results)
+        return result_new
 
     def do_recognize(self, filepath, start_time, rec_length):
         try:
@@ -114,32 +146,22 @@ class ACRCloud_Scan_Files:
     def recognize_file(self, filepath, start_time, stop_time, step, rec_length, with_duration=0):
         self.dlog.logger.warn("scan_file.start_to_run: {0}".format(filepath))
 
-        if with_duration == 1:
-            self.dlog.logger.warn("results with duration...")
-            fname = os.path.basename(filepath)
-            fworker = FilterWorker("./", "result-"+fname+"_with_duration.xlsx")
-
         result = []
         for i in range(start_time, stop_time, step):
             filep, current_time, res_data = self.do_recognize(filepath, i, rec_length)
             try:
-                ret_dict = json.loads(res_data)
-                code = ret_dict['status']['code']
-                msg = ret_dict['status']['msg']
-                if 'metadata' in ret_dict:
-                    metadata = ret_dict['metadata']
-                    res = self.parse_data(current_time, metadata)
-                    result.append(res)
-                    if with_duration == 1:
-                        fworker.do_filter(fname, ret_dict, rec_length, current_time)
-                    self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[1]))
+                jsoninfo = json.loads(res_data)
+                code = jsoninfo['status']['code']
+                msg = jsoninfo['status']['msg']
+                if "status" in jsoninfo  and jsoninfo["status"]["code"] ==0 :
+                    result.append({"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep})
+                    res = self.parse_data(jsoninfo)
+                    self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
                 if code == 2005:
                     self.dlog.logger.warn('recognize_file.(time:{0}, Done!)'.format(current_time, code))
                     break
                 elif code == 1001:
                     self.dlog.logger.info("recognize_file.(time:{0}, No_Result)".format(current_time, code))
-                    if with_duration == 1:
-                        fworker.do_filter(fname, ret_dict, rec_length, current_time)
                 elif code == 3001:
                     self.dlog.logger.error('recognize_file.(time:{0}, Missing/Invalid Access Key)'.format(current_time, code))
                     break
@@ -152,8 +174,6 @@ class ACRCloud_Scan_Files:
             except Exception as e:
                 self.dlog.logger.error('recognize_file.error', exc_info=True)
                 self.write_error(filepath, i, 'JSON ERROR')
-        if with_duration == 1:
-            fworker.end_filter(fname, rec_length, current_time)
         return result
 
 
@@ -173,12 +193,12 @@ class ACRCloud_Scan_Files:
             if os.path.exists(filename):
                 os.remove(filename)
             if results:
-                with codecs.open(filename, 'w', 'utf-8-sig') as f:
-                    fields = ['time', 'title', 'artists', 'album', 'acrid', 'play offset(ms)', 'label', 'isrc', 'upc',
-                              'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
-                    dw = csv.writer(f)
-                    dw.writerow(fields)
-                    dw.writerows(results)
+                self.export_to_csv(results, filename)
+
+            if with_duration == 1:
+                new_results = self.apply_filter(results)
+                filename_with_duration =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
+                self.export_to_csv(new_results, filename_with_duration)
         except Exception as e:
             self.dlog.logger.error("scan_file_main.error", exc_info=True)
 

@@ -1,2 +1,5 @@
+fuzzywuzzy
 backports.csv
 requests
+openpyxl
+python-dateutil
