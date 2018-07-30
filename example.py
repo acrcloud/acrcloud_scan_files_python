@@ -30,7 +30,7 @@ stop_time = acr_sfile.get_duration_by_file(filepath)
 #get a list of recognition results
 result_list = acr_sfile.recognize_file(filepath, start_time, stop_time, step, rec_length)
 
-#export the result
+#export dir
 export_dir = "./"
 #export to csv
 export_filename_csv = "test.csv"

@@ -127,25 +127,42 @@ Introduction all API.
  ```
  class ACRCloud_Scan_Files:
      def get_duration_by_file(self, filepath):
-     #@pass
+        #@param filepath : query file path
+        #@return : total duration of the file
 
-     def export_to_xlsx(self, result_list, export_filename="ACRCloud_ScanFile_Results.xlsx", export_dir="./"):
-     #@pass
+     def export_to_xlsx(self, result_list, export_filename, export_dir):
+        #@param result_list : the list of identification results
+        #@param export_filename : export to this file
+        #@param export_dir : export to this directory
 
-     def export_to_csv(self, result_list, export_filename="ACRCloud_ScanFile_Results.csv", export_dir="./"):
-     #@pass
+     def export_to_csv(self, result_list, export_filename, export_dir):
+        #@param result_list : the list of recognition results
+        #@param export_filename : export to this file
+        #@param export_dir : export to this directory
 
-     def parse_data(self, jsoninfo):
-     #@pass
+     def parse_data(self, result):
+        #@param result : one recognition result
+        #@return : a tuple, as follow
+        #     (title, artists, album, acrid, played_duration, label, isrc, upc,
+        #       deezer, spotify, itunes, youtube, custom_files_title, audio_id)
 
      def apply_filter(self, results):
-     #@pass
+        #@param results : the list of recognition results
+        #@return : a list results with played_duration
 
-     def for_recognize_file(self,  filepath, start_time, stop_time, step, rec_length):
-     #@pass
+     def for_recognize_file(self, filepath, start_time, stop_time, step, rec_length):
+        #@param filepath : query file path
+        #@param start_time : the start offset to recognize (seconds)
+        #@param stop_time : the end offset to recognize (seconds)
+        #@param rec_length : the duration of each fragment to recognize
+        #@return : iterator to return the each recognition result
 
      def recognize_file(self, filepath, start_time, stop_time, step, rec_length):
-     #@pass
+        #@param filepath : query file path
+        #@param start_time : the start offset to recognize (seconds)
+        #@param stop_time : the end offset to recognize (seconds)
+        #@param rec_length : the duration of each fragment to recognize
+        #@return : the list of recognition results
  ```
 
 ###Example
