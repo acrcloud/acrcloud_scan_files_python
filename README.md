@@ -170,9 +170,9 @@ rec_length = step
 
 #your acrcloud project host, access_key, access_secret
 config = {
-    "host": "identify-ap-southeast-1.acrcloud.com",
-    "access_key":"e85818d71cd5ee3814db6d517c4a4a0a",
-    "access_secret": "4nH4eEfEIrR0bdO1FmrRvweUJ6NK735iNqMorVan"
+    "host": "XXX",
+    "access_key":"XXX",
+    "access_secret": "XXX"
 }
 
 filepath = sys.argv[1]
