@@ -409,7 +409,8 @@ class ResultFilter:
             self._delay_music[stream_id].append((raw_title, sim_title[0], timestamp, data))
 
         if len(self._delay_music[stream_id]) > self._delay_list_max_num :
-            return self.runDelayX(stream_id)
+            #return self.runDelayX(stream_id)
+            return self.runDelayX_for_music_delay2(stream_id)
         else:
             return None
 
@@ -705,7 +706,264 @@ class ResultFilter:
                     ret_duration = duration_accurate
             retdata['result']['metadata']['played_duration'] = abs(ret_duration)
             retdata['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
+            retdata['timestamp'] = accurate_timestamp_utc
         return retdata
+
+
+    def get_music_duration_by_title(self, title, ret_data):
+        try:
+            duration = 0
+            for index, item in enumerate(ret_data["result"]["metadata"]["music"]):
+                if title == item["title"]:
+                    duration_ms = int(item["duration_ms"])
+                    if duration_ms >= 0:
+                        duration = int(duration_ms/1000)
+        except Exception as e:
+            self._dlog.logger.error("Error@get_music_duration_by_title, error_data:{0}".format(ret_data), exc_info=True)
+        return duration
+
+    def dynamic_judge_size_for_music_delay2(self, deal_title_map, history_data):
+        #Just for music delay2 filter
+        try:
+            judge_size = 4
+            title = deal_title_map.keys()[0]
+            index = deal_title_map[title]["index_list"][-1]
+            ret_data = history_data[index][3]
+            duration = self.get_music_duration_by_title(title, ret_data)
+            tmp_size = int(duration/10)
+            if tmp_size <=4:
+                judge_size = tmp_size if tmp_size > 1 else 2
+        except Exception as e:
+            self._dlog.logger.error("Error@dynamic_judge_size_for_music_delay2", exc_info=True)
+        return judge_size if judge_size >= 2 else 2
+
+    def remove_next_result_from_now_result_list_for_music_delay2(self, history_data, ret_data, max_index):
+        #Just for music delay2 filter
+        try:
+            if ret_data and len(history_data) >= max_index+2:
+                raw_title, sim_title, timestamp, next_data = history_data[max_index + 1]
+                if next_data:
+                    next_title_list = self.get_mutil_result_title(next_data, 'music', 1)
+                    next_title_set = set(next_title_list)
+                    new_ret_music = []
+                    for index, item in enumerate(ret_data["result"]["metadata"]["music"]):
+                        if index == 0 or (item["title"] not in next_title_set):
+                            new_ret_music.append(item)
+                    ret_data["result"]["metadata"]["music"] = new_ret_music
+        except Exception as e:
+            self._dlog.logger.error("Error@remove_next_result_from_now_result_list_for_music_delay2", exc_info=True)
+
+    def result_append_for_music_delay2(self, ret_data, title, from_data):
+        try:
+            ret_title_set = set()
+            for item in ret_data['result']['metadata']['music']:
+                sim_title = self.tryStrSub(item['title'])[0]
+                ret_title_set.add(sim_title)
+
+            for item in from_data['result']['metadata']['music']:
+                from_title = item['title']
+                sim_from_title = self.tryStrSub(from_title)[0]
+                if sim_from_title == title and sim_from_title not in ret_title_set:
+                    ret_data['result']['metadata']['music'].append(item)
+                    ret_title_set.add(sim_from_title)
+        except Exception as e:
+            self._dlog.logger.error("Error@result_append_for_music_delay2", exc_info=True)
+
+
+    def runDelayX_for_music_delay2(self, stream_id):
+        """
+        该算法通过修改runDelayX_custom而来, 用于不删除出现的单个结果
+        """
+        history_data = self._delay_music[stream_id]
+
+        if len(history_data) >= self._delay_list_threshold:
+            self._dlog.logger.error("delay_music_2[{0}] list num({1}) over threshold {2}".format(stream_id, len(history_data), self._delay_list_threshold))
+            self._dlog.logger.error("delay_music_2[{0}] data: \n{1}".format(stream_id, '\n'.join(["{0}: {1}".format(i, str(item[:-1])) for i,item in enumerate(history_data)])))
+
+            history_data = history_data[-(self._delay_list_threshold-1):]
+
+            history_data_len = len(history_data)
+            #保证index=1的item不为NoResult
+            for ii in range((history_data_len-1), 0, -1):
+                if history_data[-ii][0][0] == NORESULT:
+                    continue
+                else:
+                    history_data = history_data[-(ii+1):]
+                    break
+
+        #需要先跳过前面的noresult
+        first_not_noresult_index = -1
+        for index, item in enumerate(history_data):
+            if index == 0:
+                continue
+            if item[0] == NORESULT:
+                first_not_noresult_index = index
+            else:
+                break
+        if first_not_noresult_index != -1:
+            history_data = history_data[first_not_noresult_index:]
+            self._delay_music[stream_id] = history_data
+            return None
+
+        ########## Get Break Index ##########
+        deal_title_map = {} #key:title, value:{'count':0, 'index_list':[]}
+        break_index = 0
+
+
+        #history_data[0] 作为上一个结果的保留，用于计算played_duration时判断前一个是否包含当前结果
+        for index, item in enumerate(history_data[1:]):
+            #index此时需要从1开始
+            index += 1
+            raw_title, sim_title, timestamp, data = item
+            if index!=1:
+                flag_first = True
+                flag_second = True
+                if sim_title in deal_title_map:
+                    flag_first = False
+                """
+                if flag_first:
+                    judge_size = self.dynamic_judge_size_for_music_delay2(deal_title_map, history_data)
+                    for i in range(1,judge_size):
+                        if index + i < len(history_data):
+                            next_raw_title, next_sim_title, next_timestamp, next_data = history_data[index + i]
+                            if next_sim_title in deal_title_map:
+                                flag_second = False
+                        else:
+                            flag_second = False
+                """
+                if flag_first:
+                    #此时开始遍历title_list[:5]的列表中不包含的第一个位置
+                    tmp_all_len = len(history_data)
+                    tmp_count = 0 #遇到第一个不一样的，在往后在多判断5个
+                    tmp_first_break_index = -1  #记录第一个断点的index
+                    tmp_judge_size = 15 #self.custom_delay_dynamic_judge_size(deal_title_map, history_data)
+                    tmp_judge_size = 5 if tmp_judge_size < 5 else tmp_judge_size
+                    for i in range(index, tmp_all_len):
+                        #next_title_list, next_timestamp, next_data = history_data[i]
+                        next_raw_title, next_sim_title, next_timestamp, next_data = history_data[i]
+                        tmp_list_flag = False  #标记这个列表中是否包含
+                        if next_sim_title in deal_title_map:
+                            tmp_list_flag = True
+                            tmp_count = 0
+                            tmp_first_break_index = -1
+                        if tmp_list_flag:
+                            continue
+                        else:
+                            tmp_count += 1
+                            #记录遇到的第一个断点的位置
+                            if tmp_first_break_index == -1:
+                                tmp_first_break_index = i
+                            #如果后五个都没有相似的，那么断开
+                            if tmp_count <= tmp_judge_size:
+                                continue
+                            flag_second = True
+                            break_index = tmp_first_break_index if tmp_first_break_index != -1 else i   #标记断点位置
+                            break
+
+                if flag_first and flag_second and deal_title_map:
+                    #找到断点break
+                    #break_index = index  #[0, index), index是需要处理的最后一个索引的下一个
+                    if break_index >0:
+                        for iii in range(index, break_index):
+                            tmp_raw_title, tmp_sim_title, tmp_timestamp, tmp_data = history_data[iii]
+                            if tmp_sim_title == NORESULT:
+                                continue
+                            if tmp_sim_title in deal_title_map:
+                                deal_title_map[tmp_sim_title]['count'] += 1
+                                deal_title_map[tmp_sim_title]['index_list'].append(iii)
+                    #跳出
+                    break
+
+            if sim_title == NORESULT:
+                continue
+            if sim_title not in deal_title_map:
+                deal_title_map[sim_title] ={'count':0, 'index_list':[]}
+            deal_title_map[sim_title]['count'] += 1
+            deal_title_map[sim_title]['index_list'].append(index)
+
+
+        ret_data = None
+        duration_dict = {}
+        duration = 0
+        if break_index > 0 and deal_title_map:
+            tmp_count_map = {}
+            sorted_title_list = sorted(deal_title_map.items(), key = lambda x:x[1]['count'], reverse = True)
+            for sitem in sorted_title_list:
+                sitem_title, sitem_map = sitem
+                sitem_count = sitem_map["count"]
+                sitem_min_index = min(sitem_map["index_list"])
+                if sitem_count not in tmp_count_map:
+                    tmp_count_map[sitem_count] = []
+                tmp_count_map[sitem_count].append((sitem_title, sitem_min_index))
+            first_item_flag = True
+            for scount in sorted(tmp_count_map.keys(), reverse=True):
+                count_list = sorted(tmp_count_map[scount], key = lambda x:x[1])
+                for ditem in count_list:
+                    dtitle, dindex = ditem
+                    from_data = history_data[dindex][3]
+                    if first_item_flag:
+                        first_item_flag = False
+                        ret_data = copy.deepcopy(from_data)
+                        ret_data["result"]["metadata"]["music"] = []
+
+                    self.result_append_for_music_delay2(ret_data, dtitle, from_data)
+
+            index_range = set()
+            for title in deal_title_map:
+                index_range |= set(deal_title_map[title]['index_list'])
+            min_index = min(index_range)
+            max_index = max(index_range)
+            duration_dict = self.compute_played_duration(history_data, min_index, max_index, True, "music")
+
+            #去除当前结果的末尾识别到了下一个结果的前部，即判断当前结果列表里是否可能包含下一个结果，若存在，则去除
+            self.remove_next_result_from_now_result_list_for_music_delay2(history_data, ret_data, max_index)
+
+        if ret_data:
+            duration = duration_dict["duration"]
+            duration_accurate = duration_dict["duration_accurate"]
+            sample_duration = duration_dict["sample_duration"]
+            db_duration = duration_dict["db_duration"]
+            mix_duration = duration_dict["mix_duration"]
+            accurate_timestamp_utc = duration_dict["accurate_timestamp_utc"]
+            ret_data['result']['metadata']['played_duration'] = abs(mix_duration)
+            ret_data['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
+            ret_data['timestamp'] = accurate_timestamp_utc
+            if ret_data['result']['metadata']['played_duration'] <= 1:
+                ret_data = None
+
+        ########### cut history_data #############
+        if break_index>=0:
+            cut_index = break_index
+            for i, item in enumerate(history_data[break_index:]):
+                if item[0][0] == NORESULT:
+                    cut_index = break_index + i + 1
+                else:
+                    break
+            #此处减一是为了保留最后一个作为history_data[0],为下一个计算played_duration
+            cut_index = cut_index - 1 if cut_index >= 1 else cut_index
+            history_data = history_data[cut_index:]
+
+            #修复bug，当index=1，为noresult是会报错，title_list是空会导致报错
+            reverse_index = -1
+            for i, item in enumerate(history_data[::-1]):
+                if item[0][0] == NORESULT:
+                    reverse_index = i
+                    continue
+                else:
+                    break
+
+            if reverse_index != -1:
+                new_cut_index = -1
+                reverse_index = len(history_data) - reverse_index - 1
+                if reverse_index in [0, 1]:
+                    history_data = []
+                else:
+                    pass
+
+            self._delay_music[stream_id] = history_data
+
+        return ret_data
+
 
     def deal_real_custom(self, data):
         is_new = False
@@ -895,6 +1153,7 @@ class ResultFilter:
             accurate_timestamp_utc = duration_dict["accurate_timestamp_utc"]
             ret_data['result']['metadata']['played_duration'] = abs(mix_duration)
             ret_data['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
+            ret_data['timestamp'] = accurate_timestamp_utc
             if ret_data['result']['metadata']['played_duration'] <= self._delay_custom_played_duration_min:
                 ret_data = None
 
@@ -1046,3 +1305,9 @@ class FilterWorker:
             self.dlog.logger.error("Error@apply_filter", exc_info=True)
         return self._result_map
 
+    def test(self):
+        a = '{"timestamp": "01 00:17:40", "rec_length": 10, "result": {"status": {"msg": "Success", "code": 0, "version": "1.0"}, "cost_time": 1.2630000114441, "result_type": 0, "metadata": {"timestamp_utc": "2018-08-02 14:44:39", "music": [{"album": {"name": "Solino"}, "play_offset_ms": 85200, "sample_begin_time_offset_ms": 300, "title": "La Bambola", "result_from": 1, "release_date": "2002-10-28", "sample_end_time_offset_ms": 9460, "genres": [{"name": "Pop"}], "label": "Amiga", "db_end_time_offset_ms": 85120, "score": 82, "db_begin_time_offset_ms": 75960, "artists": [{"name": "Patty Pravo"}], "duration_ms": 182200, "external_ids": {"isrc": "ITB006870616", "upc": "743219711328"}, "acrid": "27fef80da4dabc33591a2c08a08edaf0", "external_metadata": {"spotify": {"album": {"name": "Solino", "id": "0I3MXd5FYGAj6X9GOJepMb"}, "track": {"name": "La Bambola", "id": "5YT3WdXo5gBwZ0TlJiB0TE"}, "artists": [{"name": "Patty Pravo", "id": "2Yi5fknmHBqqKjHF6cXQyh"}]}, "deezer": {"album": {"name": "Solino", "id": "112016"}, "track": {"name": "La Bambola", "id": "1017795"}, "artists": [{"name": "Patty Pravo", "id": "58615"}]}, "youtube": {"vid": "UHCgZY-HX6U"}}}]}}, "file": "radioairplay_19/501.2018.06.19.04.00.00.mp3"}'
+        data = json.loads(a)
+        raw_title = self._result_filter.get_mutil_result_title(data, 'music', 1)[0]
+        sim_title = self._result_filter.tryStrSub(raw_title)
+        print raw_title, sim_title

@@ -154,12 +154,13 @@ class ACRCloud_Scan_Files:
                 filep, current_time, res_data = self.do_recognize(filepath, i, rec_length)
                 if res_data:
                     jsoninfo = json.loads(res_data)
+                    if "metadata" in jsoninfo and "timestamp_utc" in jsoninfo["metadata"]:
+                        jsoninfo["metadata"]["timestamp_utc"] = current_time
                 else:
                     jsoninfo = {}
                 yield {"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep}
         except Exception as e:
             self.log.error("Error@for_recognize_file", exc_info=True)
-
 
     def recognize_file(self, filepath, start_time, stop_time, step, rec_length):
         try:
@@ -169,6 +170,9 @@ class ACRCloud_Scan_Files:
                 if res_data:
                     jsoninfo = json.loads(res_data)
                     try:
+                        if "metadata" in jsoninfo and "timestamp_utc" in jsoninfo["metadata"]:
+                            jsoninfo["metadata"]["timestamp_utc"] = current_time
+
                         code = jsoninfo["status"]["code"]
                         msg = jsoninfo["status"]["msg"]
                         if jsoninfo["status"]["code"] not in [0, 1001]:
