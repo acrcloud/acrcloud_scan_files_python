@@ -32,7 +32,7 @@ class ResultFilter:
         self._delay_custom = {}
         self._delay_custom_played_duration_min = 2
         self._delay_list_max_num = 30
-        self._delay_list_threshold = 70
+        self._delay_list_threshold = 120
 
     def get_mutil_result_title(self, data, itype='music', isize = 1):
         ret_list = []
@@ -777,9 +777,8 @@ class ResultFilter:
         history_data = self._delay_music[stream_id]
 
         if len(history_data) >= self._delay_list_threshold:
-            self._dlog.logger.error("delay_music_2[{0}] list num({1}) over threshold {2}".format(stream_id, len(history_data), self._delay_list_threshold))
-            self._dlog.logger.error("delay_music_2[{0}] data: \n{1}".format(stream_id, '\n'.join(["{0}: {1}".format(i, str(item[:-1])) for i,item in enumerate(history_data)])))
-
+            #self._dlog.logger.error("delay_music_2[{0}] list num({1}) over threshold {2}".format(stream_id, len(history_data), self._delay_list_threshold))
+            #self._dlog.logger.error("delay_music_2[{0}] data: \n{1}".format(stream_id, '\n'.join(["{0}: {1}".format(i, str(item[:-1])) for i,item in enumerate(history_data)])))
             history_data = history_data[-(self._delay_list_threshold-1):]
 
             history_data_len = len(history_data)
