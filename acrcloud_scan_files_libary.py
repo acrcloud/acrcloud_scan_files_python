@@ -54,13 +54,14 @@ class ACRCloud_Scan_Files:
                     row = self.parse_data(jsoninfo)
                     row = [filename, timestamp] + list(row)
                     results.append(row)
+            results = sorted(results, key=lambda x:x[1])
 
             wb = Workbook()
             sheet_music = wb.active
             sheet_music.title = "ACRCloud_Scan_File"
 
-            header_row = ['filename', 'timestamp', 'title', 'artists', 'album', 'acrid', 'played_duration', 'label',
-                          'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
+            header_row = ['filename', 'timestamp', 'custom_files_title', 'custom_acrid', 'title', 'artists', 'album',
+                        'acrid', 'played_duration', 'label', 'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube']
 
             sheet_music.append(header_row)
             for row in results:
@@ -91,11 +92,13 @@ class ACRCloud_Scan_Files:
                     row = [filename, timestamp] + list(row)
                     results.append(row)
 
+            results = sorted(results, key=lambda x:x[1])
+
             export_filepath = os.path.join(export_dir, export_filename)
 
             with codecs.open(export_filepath, 'w', 'utf-8-sig') as f:
-                head_row = ['filename', 'timestamp', 'title', 'artists', 'album', 'acrid', 'played_duration', 'label',
-                            'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
+                head_row = ['filename', 'timestamp',  'custom_files_title', 'custom_acrid', 'title', 'artists', 'album',
+                        'acrid', 'played_duration', 'label', 'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube']
                 dw = csv.writer(f)
                 dw.writerow(head_row)
                 dw.writerows(results)
@@ -107,7 +110,7 @@ class ACRCloud_Scan_Files:
     def parse_data(self, jsoninfo):
         try:
             title, played_duration, isrc, upc, acrid, label, album = [""]*7
-            artists, deezer, spotify, itunes, youtube, custom_files_title, audio_id  = [""]*7
+            artists, deezer, spotify, itunes, youtube, custom_files_title, audio_id, custom_acrid  = [""]*8
 
             metadata = jsoninfo.get('metadata', {})
             played_duration = metadata.get("played_duration", "")
@@ -130,11 +133,12 @@ class ACRCloud_Scan_Files:
                 custom_item = metadata["custom_files"][0]
                 custom_files_title = custom_item.get("title", "")
                 audio_id = custom_item.get("audio_id", "")
+                custom_acrid = custom_item.get("acrid", "")
         except Exception as e:
             self.log.error("Error@parse_data")
 
-        res = (title, artists, album, acrid, played_duration, label, isrc, upc,
-               deezer, spotify, itunes, youtube, custom_files_title, audio_id)
+        res = (custom_files_title, custom_acrid, title, artists, album, acrid,
+               played_duration, label, isrc, upc, deezer, spotify, itunes, youtube,)
 
         return res
 
