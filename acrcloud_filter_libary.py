@@ -771,18 +771,12 @@ class ResultFilter:
 
 
     def runDelayX_for_music_delay2(self, stream_id):
-        """
-        该算法通过修改runDelayX_custom而来, 用于不删除出现的单个结果
-        """
         history_data = self._delay_music[stream_id]
 
         if len(history_data) >= self._delay_list_threshold:
-            #self._dlog.logger.error("delay_music_2[{0}] list num({1}) over threshold {2}".format(stream_id, len(history_data), self._delay_list_threshold))
-            #self._dlog.logger.error("delay_music_2[{0}] data: \n{1}".format(stream_id, '\n'.join(["{0}: {1}".format(i, str(item[:-1])) for i,item in enumerate(history_data)])))
             history_data = history_data[-(self._delay_list_threshold-1):]
 
             history_data_len = len(history_data)
-            #保证index=1的item不为NoResult
             for ii in range((history_data_len-1), 0, -1):
                 if history_data[-ii][0][0] == NORESULT:
                     continue
@@ -790,7 +784,6 @@ class ResultFilter:
                     history_data = history_data[-(ii+1):]
                     break
 
-        #需要先跳过前面的noresult
         first_not_noresult_index = -1
         for index, item in enumerate(history_data):
             if index == 0:
@@ -809,9 +802,7 @@ class ResultFilter:
         break_index = 0
 
 
-        #history_data[0] 作为上一个结果的保留，用于计算played_duration时判断前一个是否包含当前结果
         for index, item in enumerate(history_data[1:]):
-            #index此时需要从1开始
             index += 1
             raw_title, sim_title, timestamp, data = item
             if index!=1:
@@ -819,28 +810,15 @@ class ResultFilter:
                 flag_second = True
                 if sim_title in deal_title_map:
                     flag_first = False
-                """
                 if flag_first:
-                    judge_size = self.dynamic_judge_size_for_music_delay2(deal_title_map, history_data)
-                    for i in range(1,judge_size):
-                        if index + i < len(history_data):
-                            next_raw_title, next_sim_title, next_timestamp, next_data = history_data[index + i]
-                            if next_sim_title in deal_title_map:
-                                flag_second = False
-                        else:
-                            flag_second = False
-                """
-                if flag_first:
-                    #此时开始遍历title_list[:5]的列表中不包含的第一个位置
                     tmp_all_len = len(history_data)
-                    tmp_count = 0 #遇到第一个不一样的，在往后在多判断5个
-                    tmp_first_break_index = -1  #记录第一个断点的index
-                    tmp_judge_size = 15 #self.custom_delay_dynamic_judge_size(deal_title_map, history_data)
-                    tmp_judge_size = 5 if tmp_judge_size < 5 else tmp_judge_size
+                    tmp_count = 0
+                    tmp_first_break_index = -1
+                    tmp_judge_size = 2
+                    #tmp_judge_size = 5 if tmp_judge_size < 5 else tmp_judge_size
                     for i in range(index, tmp_all_len):
-                        #next_title_list, next_timestamp, next_data = history_data[i]
                         next_raw_title, next_sim_title, next_timestamp, next_data = history_data[i]
-                        tmp_list_flag = False  #标记这个列表中是否包含
+                        tmp_list_flag = False
                         if next_sim_title in deal_title_map:
                             tmp_list_flag = True
                             tmp_count = 0
@@ -849,19 +827,15 @@ class ResultFilter:
                             continue
                         else:
                             tmp_count += 1
-                            #记录遇到的第一个断点的位置
                             if tmp_first_break_index == -1:
                                 tmp_first_break_index = i
-                            #如果后五个都没有相似的，那么断开
                             if tmp_count <= tmp_judge_size:
                                 continue
                             flag_second = True
-                            break_index = tmp_first_break_index if tmp_first_break_index != -1 else i   #标记断点位置
+                            break_index = tmp_first_break_index if tmp_first_break_index != -1 else i
                             break
 
                 if flag_first and flag_second and deal_title_map:
-                    #找到断点break
-                    #break_index = index  #[0, index), index是需要处理的最后一个索引的下一个
                     if break_index >0:
                         for iii in range(index, break_index):
                             tmp_raw_title, tmp_sim_title, tmp_timestamp, tmp_data = history_data[iii]
@@ -914,7 +888,6 @@ class ResultFilter:
             max_index = max(index_range)
             duration_dict = self.compute_played_duration(history_data, min_index, max_index, True, "music")
 
-            #去除当前结果的末尾识别到了下一个结果的前部，即判断当前结果列表里是否可能包含下一个结果，若存在，则去除
             self.remove_next_result_from_now_result_list_for_music_delay2(history_data, ret_data, max_index)
 
         if ret_data:
@@ -938,11 +911,9 @@ class ResultFilter:
                     cut_index = break_index + i + 1
                 else:
                     break
-            #此处减一是为了保留最后一个作为history_data[0],为下一个计算played_duration
             cut_index = cut_index - 1 if cut_index >= 1 else cut_index
             history_data = history_data[cut_index:]
 
-            #修复bug，当index=1，为noresult是会报错，title_list是空会导致报错
             reverse_index = -1
             for i, item in enumerate(history_data[::-1]):
                 if item[0][0] == NORESULT:
