@@ -140,7 +140,7 @@ class ACRCloud_Scan_Files:
             res_data = self.re_handler.recognize_by_file(filepath, start_time, rec_length)
             return filepath, current_time, res_data
         except Exception as e:
-            self.dlog.logger.error("do_recognize.error.({0}, {1}, {})".format(filepath,start_time,rec_length),exc_info=True)
+            self.dlog.logger.error("do_recognize.error.({0}, {1}, {2})".format(filepath,start_time,rec_length),exc_info=True)
         return filepath, current_time, None
 
     def recognize_file(self, filepath, start_time, stop_time, step, rec_length, with_duration=0):
@@ -158,15 +158,15 @@ class ACRCloud_Scan_Files:
                     res = self.parse_data(jsoninfo)
                     self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
                 if code == 2005:
-                    self.dlog.logger.warn('recognize_file.(time:{0}, Done!)'.format(current_time, code))
+                    self.dlog.logger.warn('recognize_file.(time:{0}, code:{1}, Done!)'.format(current_time, code))
                     break
                 elif code == 1001:
-                    self.dlog.logger.info("recognize_file.(time:{0}, No_Result)".format(current_time, code))
+                    self.dlog.logger.info("recognize_file.(time:{0}, code:{1}, No_Result)".format(current_time, code))
                 elif code == 3001:
-                    self.dlog.logger.error('recognize_file.(time:{0}, Missing/Invalid Access Key)'.format(current_time, code))
+                    self.dlog.logger.error('recognize_file.(time:{0}, code:{1}, Missing/Invalid Access Key)'.format(current_time, code))
                     break
                 elif code == 3003:
-                    self.dlog.logger.error('recognize_file.(time:{0}, Limit exceeded)'.format(current_time, code))
+                    self.dlog.logger.error('recognize_file.(time:{0}, code:{1}, Limit exceeded)'.format(current_time, code))
                 elif code == 3000:
                     self.dlog.logger.error('recognize_file.(time:{0}, {1}, {2})'.format(current_time, code, msg))
                     self.write_error(filepath, i, 'NETWORK ERROR')
