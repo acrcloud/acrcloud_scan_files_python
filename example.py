@@ -21,6 +21,8 @@ if __name__ == "__main__":
         "access_key":"your project access_key",
         "access_secret": "your project access_secret"
     }
+    #export dir
+    export_dir = "./"
 
     filepath = sys.argv[1]
 
@@ -28,17 +30,16 @@ if __name__ == "__main__":
 
     stop_time = acr_sfile.get_duration_by_file(filepath)
 
+    """
     #get a list of recognition results
     result_list = acr_sfile.recognize_file(filepath, start_time, stop_time, step, rec_length)
-
-    #export dir
-    export_dir = "./"
     #export to csv
     export_filename_csv = filepath + ".csv"
     acr_sfile.export_to_csv(result_list, export_filename_csv, export_dir)
     #export to xlsx
     export_filename_xlsx = filepath + ".xlsx"
     acr_sfile.export_to_xlsx(result_list, export_filename_xlsx, export_dir)
+    """
 
     #iterator to get the result of each fragment
     result_list2 = []
