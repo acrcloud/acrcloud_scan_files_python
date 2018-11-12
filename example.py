@@ -48,7 +48,7 @@ if __name__ == "__main__":
             filename = item["file"]
             timestamp = item["timestamp"]
             res = acr_sfile.parse_data(item["result"])
-            title = res[3]
+            title = res[2]
             print filename, timestamp, title
             wfile.write("{0}\n".format(json.dumps(item)))
 
