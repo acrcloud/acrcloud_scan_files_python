@@ -46,7 +46,7 @@ if __name__ == "__main__":
         filename = item["file"]
         timestamp = item["timestamp"]
         res = acr_sfile.parse_data(item["result"])
-        title = res[0]
+        title = res[3]
         print filename, timestamp, title
 
     #get results with played-duration

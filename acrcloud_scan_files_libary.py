@@ -180,7 +180,7 @@ class ACRCloud_Scan_Files:
                         code = jsoninfo["status"]["code"]
                         msg = jsoninfo["status"]["msg"]
                         if jsoninfo["status"]["code"] not in [0, 1001]:
-                            raise "recognize_file.(timestamp: {0}, {1}, {2})".format(current_time, code, msg)
+                            raise Exception("recognize_file.(timestamp: {0}, {1}, {2})".format(current_time, code, msg))
                     except Exception as e:
                         if self.debug:
                             self.log.error(e)
