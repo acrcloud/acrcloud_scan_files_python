@@ -1260,7 +1260,7 @@ class FilterWorker:
     def apply_filter(self, result_list):
         try:
             appid = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
-
+            rec_length = 10
             for index, item in enumerate(result_list):
                 filename = item["file"]
                 timestamp = item["timestamp"]
