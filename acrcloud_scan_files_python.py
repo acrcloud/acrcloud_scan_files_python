@@ -183,6 +183,7 @@ class ACRCloud_Scan_Files:
             step = option.step
             rec_length = option.rec_length
             with_duration = option.with_duration
+            out_dir = option.out_dir
             if start_time == 0 and stop_time == 0:
                 file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
                 results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length, with_duration)
@@ -190,17 +191,18 @@ class ACRCloud_Scan_Files:
                 results = self.recognize_file(filepath, start_time, stop_time, step, rec_length, with_duration)
 
             filename = 'result-' + os.path.basename(filepath.strip()) + '.csv'
-            if os.path.exists(filename):
-                os.remove(filename)
+            fpath = os.path.join(out_dir, filename)
+            if os.path.exists(fpath):
+                os.remove(fpath)
             if results:
-                self.export_to_csv(results, filename)
+                self.export_to_csv(results, filename, out_dir)
 
             if with_duration == 1:
                 new_reuslts = []
                 if results:
                     new_results = self.apply_filter(results)
                 filename_with_duration =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
-                self.export_to_csv(new_results, filename_with_duration)
+                self.export_to_csv(new_results, filename_with_duration, out_dir)
         except Exception as e:
             self.dlog.logger.error("scan_file_main.error", exc_info=True)
 
@@ -245,6 +247,7 @@ if __name__ == '__main__':
     parser.add_option('-e', '--error_file', dest='error_file', type='string', help='error scan file')
     parser.add_option('-r', '--range', dest='range', type='string', default='0-0', help='error scan file')
     parser.add_option('-w', '--with_duration', dest="with_duration", type='int', default=0, help='with_duration')
+    parser.add_option('-od', '--out_dir', dest="out_dir", type='string', default="./", help='out_dir')
     (options, args) = parser.parse_args()
     start = int(options.range.split('-')[0])
     stop = int(options.range.split('-')[1])

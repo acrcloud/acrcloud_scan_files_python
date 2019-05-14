@@ -106,6 +106,8 @@ pip install -r requirements.txt
 "-c" ---- set the config file path.
 
 "-w" ---- results with duration. (1-yes, 0-no), you must set offset config for your access key, pls contact support@acrcloud.com
+
+"-od" ---- set the directory to save the results
  ```
  If you want to change scan interval or you want to set recognize range,you can add some params
  Example:
