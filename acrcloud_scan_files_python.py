@@ -247,7 +247,7 @@ if __name__ == '__main__':
     parser.add_option('-e', '--error_file', dest='error_file', type='string', help='error scan file')
     parser.add_option('-r', '--range', dest='range', type='string', default='0-0', help='error scan file')
     parser.add_option('-w', '--with_duration', dest="with_duration", type='int', default=0, help='with_duration')
-    parser.add_option('-od', '--out_dir', dest="out_dir", type='string', default="./", help='out_dir')
+    parser.add_option('-o', '--out_dir', dest="out_dir", type='string', default="./", help='out_dir')
     (options, args) = parser.parse_args()
     start = int(options.range.split('-')[0])
     stop = int(options.range.split('-')[1])
