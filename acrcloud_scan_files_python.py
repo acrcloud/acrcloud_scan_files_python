@@ -161,6 +161,7 @@ class ACRCloud_Scan_Files:
                     self.dlog.logger.warn('recognize_file.(time:{0}, code:{1}, Done!)'.format(current_time, code))
                     break
                 elif code == 1001:
+                    result.append({"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep})
                     self.dlog.logger.info("recognize_file.(time:{0}, code:{1}, No_Result)".format(current_time, code))
                 elif code == 3001:
                     self.dlog.logger.error('recognize_file.(time:{0}, code:{1}, Missing/Invalid Access Key)'.format(current_time, code))
