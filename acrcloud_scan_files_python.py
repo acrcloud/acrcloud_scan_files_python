@@ -199,7 +199,7 @@ class ACRCloud_Scan_Files:
                 self.export_to_csv(results, filename, out_dir)
 
             if with_duration == 1:
-                new_reuslts = []
+                new_results = []
                 if results:
                     new_results = self.apply_filter(results)
                 filename_with_duration =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
