@@ -226,15 +226,11 @@ class ACRCloud_Scan_Files:
 
             filename_csv = 'result-' + os.path.basename(filepath.strip()) + '.csv'
             filename_xlsx = 'result-' + os.path.basename(filepath.strip()) + '.xlsx'
-
-            fpath = os.path.join(out_dir, filename)
-            if os.path.exists(fpath):
-                os.remove(fpath)
             if results:
                 if file_type == "csv":
                     self.export_to_csv(results, filename_csv, out_dir)
                 else:
-                    self.export_to_csv(results, filename_xlsx, out_dir)
+                    self.export_to_xlsx(results, filename_xlsx, out_dir)
 
             if with_duration == 1:
                 new_results = []
@@ -245,7 +241,7 @@ class ACRCloud_Scan_Files:
                 if file_type == "csv":
                     self.export_to_csv(new_results, filename_with_duration_csv, out_dir)
                 else:
-                    self.export_to_csv(new_results, filename_with_duration_xlsx, out_dir)
+                    self.export_to_xlsx(new_results, filename_with_duration_xlsx, out_dir)
         except Exception as e:
             self.dlog.logger.error("scan_file_main.error", exc_info=True)
 
