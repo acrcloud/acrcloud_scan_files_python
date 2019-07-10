@@ -83,7 +83,6 @@ class AcrcloudLogger:
             self.logger.addHandler(fhandler)
             return True
         except Exception as e:
-            print "Error@AcrcloudLogger.addFilehandler.%s" % str(e)
             traceback.print_exc(file=sys.stdout)
             return False
 
