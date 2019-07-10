@@ -108,6 +108,8 @@ pip install -r requirements.txt
 "-w" ---- results with duration. (1-yes, 0-no), you must set offset config for your access key, pls contact support@acrcloud.com
 
 "-o" ---- set the directory to save the results
+
+"-t" ---- set the type of file.(csv[default] or xlsx).
  ```
  If you want to change scan interval or you want to set recognize range,you can add some params
  Example:
