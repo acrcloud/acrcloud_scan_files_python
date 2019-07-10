@@ -9,6 +9,7 @@ import codecs
 import optparse
 import logging
 from backports import csv
+from openpyxl import Workbook
 from acrcloud_logger import AcrcloudLogger
 from acrcloud_filter_libary import FilterWorker
 from acrcloud.recognizer import ACRCloudRecognizer
@@ -95,6 +96,37 @@ class ACRCloud_Scan_Files:
                 self.dlog.logger.info("export_to_csv.Save Data to csv: {0}".format(export_filepath))
         except Exception as e:
             self.dlog.logger.error("Error export_to_csv", exc_info=True)
+
+    def export_to_xlsx(self, result_list, export_filename="ACRCloud_ScanFile_Results.xlsx", export_dir="./"):
+        try:
+            wb = Workbook()
+            sheet_channels = wb.active
+            sheet_channels.title = "Results"
+            head_row = ['filename', 'timestamp', 'title', 'artists', 'album', 'acrid', 'played_duration', 'label',
+                        'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
+            sheet_channels.append(head_row)
+
+            for item in result_list:
+                filename = item["file"]
+                timestamp = item["timestamp"]
+                jsoninfo = item["result"]
+                if "status" in jsoninfo and jsoninfo["status"]["code"] == 0:
+                    row = self.parse_data(jsoninfo)
+                    row = [filename, timestamp] + list(row)
+                    sheet_channels.append(row)
+
+            export_filepath = os.path.join(export_dir, export_filename)
+
+            for column_cells in sheet_channels.columns:
+                length = max(len(str(cell.value) if cell.value else "") for cell in column_cells)
+                if length > 100:
+                    length == 100
+                sheet_channels.column_dimensions[column_cells[0].column].width = length
+            wb.save(export_filepath)
+
+            self.dlog.logger.info("export_to_xlsx.Save Data to xlsx: {0}".format(export_filepath))
+        except Exception as e:
+            self.dlog.logger.error("Error export_to_xlsx", exc_info=True)
 
     def parse_data(self, jsoninfo):
         try:
@@ -185,25 +217,35 @@ class ACRCloud_Scan_Files:
             rec_length = option.rec_length
             with_duration = option.with_duration
             out_dir = option.out_dir
+            file_type = option.file_type
             if start_time == 0 and stop_time == 0:
                 file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
                 results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length, with_duration)
             else:
                 results = self.recognize_file(filepath, start_time, stop_time, step, rec_length, with_duration)
 
-            filename = 'result-' + os.path.basename(filepath.strip()) + '.csv'
+            filename_csv = 'result-' + os.path.basename(filepath.strip()) + '.csv'
+            filename_xlsx = 'result-' + os.path.basename(filepath.strip()) + '.xlsx'
+
             fpath = os.path.join(out_dir, filename)
             if os.path.exists(fpath):
                 os.remove(fpath)
             if results:
-                self.export_to_csv(results, filename, out_dir)
+                if file_type == "csv":
+                    self.export_to_csv(results, filename_csv, out_dir)
+                else:
+                    self.export_to_csv(results, filename_xlsx, out_dir)
 
             if with_duration == 1:
                 new_results = []
                 if results:
                     new_results = self.apply_filter(results)
-                filename_with_duration =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
-                self.export_to_csv(new_results, filename_with_duration, out_dir)
+                filename_with_duration_csv =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
+                filename_with_duration_xlsx =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.xlsx'
+                if file_type == "csv":
+                    self.export_to_csv(new_results, filename_with_duration_csv, out_dir)
+                else:
+                    self.export_to_csv(new_results, filename_with_duration_xlsx, out_dir)
         except Exception as e:
             self.dlog.logger.error("scan_file_main.error", exc_info=True)
 
@@ -249,6 +291,8 @@ if __name__ == '__main__':
     parser.add_option('-r', '--range', dest='range', type='string', default='0-0', help='error scan file')
     parser.add_option('-w', '--with_duration', dest="with_duration", type='int', default=0, help='with_duration')
     parser.add_option('-o', '--out_dir', dest="out_dir", type='string', default="./", help='out_dir')
+    parser.add_option('-t', '--file_type', dest="file_type", type='string', default="csv", help='file_type')
+
     (options, args) = parser.parse_args()
     start = int(options.range.split('-')[0])
     stop = int(options.range.split('-')[1])
