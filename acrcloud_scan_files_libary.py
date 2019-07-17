@@ -61,7 +61,7 @@ class ACRCloud_Scan_Files:
             sheet_music.title = "ACRCloud_Scan_File"
 
             header_row = ['filename', 'timestamp', 'custom_files_title', 'custom_acrid', 'title', 'artists', 'album',
-                        'acrid', 'played_duration', 'label', 'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube']
+                        'acrid', 'played_duration', 'label', 'isrc', 'upc', 'deezer', 'spotify', 'itunes', 'youtube']
 
             sheet_music.append(header_row)
             for row in results:
@@ -98,7 +98,7 @@ class ACRCloud_Scan_Files:
 
             with codecs.open(export_filepath, 'w', 'utf-8-sig') as f:
                 head_row = ['filename', 'timestamp',  'custom_files_title', 'custom_acrid', 'title', 'artists', 'album',
-                        'acrid', 'played_duration', 'label', 'isrc', 'upc', 'dezzer', 'spotify', 'itunes', 'youtube']
+                        'acrid', 'played_duration', 'label', 'isrc', 'upc', 'deezer', 'spotify', 'itunes', 'youtube']
                 dw = csv.writer(f)
                 dw.writerow(head_row)
                 dw.writerows(results)
