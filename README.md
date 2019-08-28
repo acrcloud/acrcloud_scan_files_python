@@ -99,9 +99,9 @@ pip install -r requirements.txt
 ### Add more params
 "-s" ---- scan step. （The scan interval.）
 
-"-r" ---- scan range. （The scan range.）
+"-l" ---- use how many seconds to recongize.  (recongizing length, for example: -s 20 -l 10, Get 20 seconds of data each time and use the first 10 seconds of data to recognize)
 
-"-l" ---- use how many seconds to recongize.  (recongizing length)
+"-r" ---- scan range. （The scan range. for example: -r 5-20, it will recognize the 5th to 20th second content）
 
 "-c" ---- set the config file path.
 
