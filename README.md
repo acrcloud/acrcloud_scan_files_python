@@ -1,5 +1,7 @@
 # [Audio Recognition](https://www.acrcloud.com/music-recognition) -- File Scan Tool (Python Script)
 
+
+
 ## Overview
   [ACRCloud](https://www.acrcloud.com/) provides [Automatic Content Recognition](https://www.acrcloud.com/docs/introduction/automatic-content-recognition/) services for [Audio Fingerprinting](https://www.acrcloud.com/docs/introduction/audio-fingerprinting/) based applications such as **[Audio Recognition](https://www.acrcloud.com/music-recognition)** (supports music, video, ads for both online and offline), **[Broadcast Monitoring](https://www.acrcloud.com/broadcast-monitoring)**, **[Second Screen](https://www.acrcloud.com/second-screen-synchronization)**, **[Copyright Protection](https://www.acrcloud.com/copyright-protection-de-duplication)** and etc.<br>
   
@@ -102,7 +104,7 @@ pip install -r requirements.txt
 
 "-l" ---- recongizing length.  (use how many seconds to recongize. for example: -s 20 -l 10, it will get 20 seconds of audio each time and use the first 10 seconds of audio to recognize)
 
-"-r" ---- scan range. （The scan range. for example: -r 5-20, it will recognize the 5th to 20th second content）
+"-r" ---- scan range. （The scan range. for example: -r 5-20, it will recognize the file starting from the 5th second and finish at the 20th second.）
 
 "-c" ---- set the config file path.
 
