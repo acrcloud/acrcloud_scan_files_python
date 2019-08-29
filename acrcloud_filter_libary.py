@@ -727,7 +727,7 @@ class ResultFilter:
         #Just for music delay2 filter
         try:
             judge_size = 4
-            title = deal_title_map.keys()[0]
+            title = list(deal_title_map.keys())[0]
             index = deal_title_map[title]["index_list"][-1]
             ret_data = history_data[index][3]
             duration = self.get_music_duration_by_title(title, ret_data)
@@ -1014,7 +1014,7 @@ class ResultFilter:
     def custom_delay_dynamic_judge_size(self, deal_title_map, history_data):
         try:
             judge_size = 6
-            title = deal_title_map.keys()[0]
+            title = list(deal_title_map.keys())[0]
             index = deal_title_map[title]["index_list"][-1]
             ret_data = history_data[index][2]
             duration = self.get_custom_duration_by_title(title, ret_data)
