@@ -2,8 +2,7 @@
 #-*- coding:utf-8 -*-
 
 """
-author: quqiang
-date: 2015/07/31
+Author: qiang@acrcloud.com
 
 ps: code from web
 汉字处理的工具:
@@ -63,6 +62,8 @@ class tools_language:
         elif uchar >= u'\u3400' and uchar <= u'\u4dbf':
             return True
         elif uchar >= u'\u0400' and uchar <= u'\u052f':
+            return True
+        elif uchar >= u'\uff61' and uchar <= u'\uff9f': #半角日文 半宽假名
             return True
         else:
             return False
@@ -165,4 +166,5 @@ if __name__ == "__main__":
     hello = tools_language()
     ustring = [u'中文lk', 'so what', u'コードペンディンス', u'ネグリータ', u'日本語']
     for item in ustring:
-        print item, hello.has_CJK(item), hello.has_japanese(item)
+        print (item)
+        print (item, hello.has_CJK(item), hello.has_japanese(item))

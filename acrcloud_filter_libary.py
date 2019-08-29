@@ -12,8 +12,9 @@ import tools_str_sim
 import acrcloud_logger
 from dateutil.relativedelta import *
 
-reload(sys)
-sys.setdefaultencoding("utf8")
+if sys.version_info.major == 2:
+    reload(sys)
+    sys.setdefaultencoding("utf8")
 
 NORESULT = "noResult"
 
@@ -1280,4 +1281,4 @@ class FilterWorker:
         data = json.loads(a)
         raw_title = self._result_filter.get_mutil_result_title(data, 'music', 1)[0]
         sim_title = self._result_filter.tryStrSub(raw_title)
-        print raw_title, sim_title
+        print(raw_title, sim_title)

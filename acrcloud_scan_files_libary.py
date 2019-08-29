@@ -13,8 +13,9 @@ from acrcloud_filter_libary import FilterWorker
 from acrcloud_logger import AcrcloudLogger
 from acrcloud.recognizer import ACRCloudRecognizer
 
-reload(sys)
-sys.setdefaultencoding("utf8")
+if sys.version_info.major == 2:
+    reload(sys)
+    sys.setdefaultencoding("utf8")
 
 class ACRCloud_Scan_Files:
 
@@ -71,7 +72,7 @@ class ACRCloud_Scan_Files:
                 length = max(len(self.as_text(cell.value)) for cell in column_cells)
                 if length > 80:
                     length == 80
-                sheet_music.column_dimensions[column_cells[0].column].width = length
+                sheet_music.column_dimensions[column_cells[0].column_letter].width = length
 
             export_filepath = os.path.join(export_dir, export_filename)
             wb.save(export_filepath)
@@ -185,7 +186,7 @@ class ACRCloud_Scan_Files:
                         if self.debug:
                             self.log.error(e)
                         else:
-                            print e
+                            print (e)
                         if code in [3001, 3003, 3013]:
                             break
                         else:

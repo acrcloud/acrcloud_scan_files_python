@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
-"""
-author: hong
-Copyright (c) 2011 Adam Cohen
-......
 
 """
+Author: qiang@acrcloud.com
+"""
+
 import re
-from fuzzywuzzy import fuzz
+import os
 import sys
+from fuzzywuzzy import fuzz
 
-reload(sys)
-sys.setdefaultencoding("utf8")
+if sys.version_info.major == 2:
+    reload(sys)
+    sys.setdefaultencoding("utf8")
 
 RE_SPECIAL_STRING = """[ \[\]［］\(\)（）\n\t\r,\.\:"'‘“<>《》!！?？&]"""
 RE_SUB_STRING = "(\(.*\))|(\[.*\])|(（.*）)"
@@ -903,8 +904,8 @@ if __name__ == "__main__":
 
     a = u"La bámbola"#"Location (Remix)"
     b = u"La Bambola"#"Location"
-    print "raw:{0},  sub:{1}, filter:{2}".format(a, str_sub(a), str_filter(a))
-    print "raw:{0},  sub:{1}, filter:{2}".format(b, str_sub(b), str_filter(b))
-    print str_sim(a, b)
+    print ("raw:{0},  sub:{1}, filter:{2}".format(a, str_sub(a), str_filter(a)))
+    print ("raw:{0},  sub:{1}, filter:{2}".format(b, str_sub(b), str_filter(b)))
+    print (str_sim(a, b))
 
-    print a, latinize(a)
+    print (a, latinize(a))

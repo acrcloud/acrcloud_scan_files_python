@@ -14,7 +14,7 @@
 
 ## Requirements
 
-- Python
+- Python 2.x or 3.x
 - fuzzywuzzy
 - openpyxl
 - backports.csv

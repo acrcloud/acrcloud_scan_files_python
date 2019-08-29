@@ -18,7 +18,7 @@ if __name__ == "__main__":
     #your acrcloud project host, access_key, access_secret
     config = {
         "host": "your project host",
-        "access_key":"your project access_key",
+        "access_key": "your project access_key",
         "access_secret": "your project access_secret"
     }
     #export dir
@@ -43,14 +43,14 @@ if __name__ == "__main__":
 
     #iterator to get the result of each fragment
     result_list2 = []
-    with open(filepath+"_raw_result.lst", "wb") as wfile:
+    with open(filepath+"_raw_result.lst", "w") as wfile:
         for item in acr_sfile.for_recognize_file(filepath, start_time, stop_time, step, rec_length):
             result_list2.append(item)
             filename = item["file"]
             timestamp = item["timestamp"]
             res = acr_sfile.parse_data(item["result"])
             title = res[2]
-            print filename, timestamp, title
+            print(filename, timestamp, title)
             wfile.write("{0}\n".format(json.dumps(item)))
 
     #get results with played-duration

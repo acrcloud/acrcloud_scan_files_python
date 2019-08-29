@@ -14,8 +14,9 @@ from acrcloud_logger import AcrcloudLogger
 from acrcloud_filter_libary import FilterWorker
 from acrcloud.recognizer import ACRCloudRecognizer
 
-reload(sys)
-sys.setdefaultencoding("utf8")
+if sys.version_info.major == 2:
+    reload(sys)
+    sys.setdefaultencoding("utf8")
 
 class ACRCloud_Scan_Files:
 
@@ -52,7 +53,7 @@ class ACRCloud_Scan_Files:
 
             self.re_handler = ACRCloudRecognizer(self.config)
             if self.re_handler:
-                self.dlog.logger.warn("init_config success!")
+                self.dlog.logger.warning("init_config success!")
         except Exception as e:
             self.dlog.logger.error("init_config.error", exc_info=True)
 
@@ -121,7 +122,7 @@ class ACRCloud_Scan_Files:
                 length = max(len(str(cell.value) if cell.value else "") for cell in column_cells)
                 if length > 100:
                     length == 100
-                sheet_channels.column_dimensions[column_cells[0].column].width = length
+                sheet_channels.column_dimensions[column_cells[0].column_letter].width = length
             wb.save(export_filepath)
 
             self.dlog.logger.info("export_to_xlsx.Save Data to xlsx: {0}".format(export_filepath))
@@ -176,7 +177,7 @@ class ACRCloud_Scan_Files:
         return filepath, current_time, None
 
     def recognize_file(self, filepath, start_time, stop_time, step, rec_length, with_duration=0):
-        self.dlog.logger.warn("scan_file.start_to_run: {0}".format(filepath))
+        self.dlog.logger.warning("scan_file.start_to_run: {0}".format(filepath))
 
         result = []
         for i in range(start_time, stop_time, step):
@@ -190,7 +191,7 @@ class ACRCloud_Scan_Files:
                     res = self.parse_data(jsoninfo)
                     self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
                 if code == 2005:
-                    self.dlog.logger.warn('recognize_file.(time:{0}, code:{1}, Done!)'.format(current_time, code))
+                    self.dlog.logger.warning('recognize_file.(time:{0}, code:{1}, Done!)'.format(current_time, code))
                     break
                 elif code == 1001:
                     result.append({"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep})
