@@ -7,6 +7,7 @@ import time
 import json
 import codecs
 import logging
+import openpyxl
 from backports import csv
 from openpyxl import Workbook
 from acrcloud_filter_libary import FilterWorker
@@ -20,6 +21,7 @@ if sys.version_info.major == 2:
 class ACRCloud_Scan_Files:
 
     def __init__(self, config, debug=1):
+        self.openpyxl_version = ".".join(str(openpyxl.__version__).split(".")[:2])
         self.config = config
         self.debug = debug
         self.init_log()
@@ -72,7 +74,10 @@ class ACRCloud_Scan_Files:
                 length = max(len(self.as_text(cell.value)) for cell in column_cells)
                 if length > 80:
                     length == 80
-                sheet_music.column_dimensions[column_cells[0].column_letter].width = length
+                if self.openpyxl_version >= "2.6":
+                    sheet_music.column_dimensions[column_cells[0].column_letter].width = length
+                else:
+                    sheet_music.column_dimensions[column_cells[0].column].width = length
 
             export_filepath = os.path.join(export_dir, export_filename)
             wb.save(export_filepath)
@@ -149,7 +154,7 @@ class ACRCloud_Scan_Files:
         return result_new
 
     def do_recognize(self, filepath, start_time, rec_length):
-        current_time = time.strftime('%d %H:%M:%S', time.gmtime(start_time))
+        current_time = time.strftime('%H:%M:%S', time.gmtime(start_time))
         res_data = self.re_handler.recognize_by_file(filepath, start_time, rec_length)
         return filepath, current_time, res_data
 

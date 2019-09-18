@@ -32,7 +32,7 @@ class ResultFilter:
         self._delay_music_interval_threshold = 2*60
         self._delay_custom = {}
         self._delay_custom_played_duration_min = 2
-        self._delay_list_max_num = 30
+        self._delay_list_max_num = 35
         self._delay_list_threshold = 120
 
     def get_mutil_result_title(self, data, itype='music', isize = 1):
@@ -191,8 +191,8 @@ class ResultFilter:
         return (None, None)
 
     def get_duration(self, end_timestamp, start_timestamp):
-        end = datetime.datetime.strptime(end_timestamp, '%d %H:%M:%S')
-        start = datetime.datetime.strptime(start_timestamp, '%d %H:%M:%S')
+        end = datetime.datetime.strptime(end_timestamp, '%H:%M:%S')
+        start = datetime.datetime.strptime(start_timestamp, '%H:%M:%S')
         return (end - start).total_seconds()
 
     def get_duration_accurate(self, end_data, start_data, itype='music'):
@@ -207,7 +207,7 @@ class ResultFilter:
         return int(round(end_play_offset - start_play_offset))
 
     def get_duration_accurate_use_db_offset(self, end_data, begin_data, isize, itype='music'):
-        begin_timestamp = datetime.datetime.strptime(begin_data['timestamp'], "%d %H:%M:%S")
+        begin_timestamp = datetime.datetime.strptime(begin_data['timestamp'], "%H:%M:%S")
 
         monitor_len = end_data.get('rec_length', 10)
 
@@ -217,7 +217,7 @@ class ResultFilter:
             if i is None:
                 return 0, 0, 0, begin_data["timestamp"]
 
-        accurate_begin_timestamp = (begin_timestamp + relativedelta(seconds=int(float(begin_sample_offset)))).strftime("%d %H:%M:%S")
+        accurate_begin_timestamp = (begin_timestamp + relativedelta(seconds=int(float(begin_sample_offset)))).strftime("%H:%M:%S")
 
         db_len = int(round(end_db_offset - begin_db_offset))
         sample_len = int(round(end_sample_offset - begin_sample_offset + (isize-1)*monitor_len))
@@ -227,7 +227,7 @@ class ResultFilter:
             mix_len = (isize-1)*monitor_len + end_sample_offset
         elif int(begin_sample_offset) == 0:
             if begin_db_offset <= monitor_len:
-                mix_len = begin_db_offset + (isize-1)*monitor_len + end_sample_offset
+                mix_len = (isize-1)*monitor_len + end_sample_offset
             else:
                 mix_len = (isize-1)*monitor_len + end_sample_offset - begin_sample_offset
         elif int(begin_db_offset) == 0:
@@ -306,7 +306,7 @@ class ResultFilter:
         for i in range(his_list_num-1, -1, -1):
             if self._real_custom[stream_id][0][i][0] == title:
                 his_timestamp = self._real_custom[stream_id][0][i][1]
-                his_time_obj = datetime.datetime.strptime(his_timestamp, '%d %H:%M:%S')
+                his_time_obj = datetime.datetime.strptime(his_timestamp, '%H:%M:%S')
                 if (now_timestamp - his_time_obj).total_seconds() <= self._real_custom_valid_interval:
                     return True
             if title == NORESULT:
@@ -410,7 +410,6 @@ class ResultFilter:
             self._delay_music[stream_id].append((raw_title, sim_title[0], timestamp, data))
 
         if len(self._delay_music[stream_id]) > self._delay_list_max_num :
-            #return self.runDelayX(stream_id)
             return self.runDelayX_for_music_delay2(stream_id)
         else:
             return None
@@ -486,258 +485,6 @@ class ResultFilter:
             self._dlog.logger.error("Error@get_diff_seconds", exc_info=True)
         return diff_sec
 
-    def runDelayX(self, stream_id):
-        history_data = self._delay_music[stream_id]
-
-        if len(history_data) >= self._delay_list_threshold:
-            history_data = history_data[-self._delay_list_max_num:]
-
-        sim_title_set = set()
-        sim_title_count = {}
-        for index, item in enumerate(history_data):
-            if index == 0:
-                continue
-            if item[1] not in sim_title_set:
-                sim_title_count[item[1]] = [1, [index, ]]
-                sim_title_set.add(item[1])
-            else:
-                sim_title_count[item[1]][0] += 1
-                sim_title_count[item[1]][1].append(index)
-
-        sim_title_count_single_index = [sim_title_count[key][1][0] for key in sim_title_count if sim_title_count[key][0] >= 1]
-
-        if len(history_data)-1 in sim_title_count_single_index:
-            sim_title_count_single_index.remove(len(history_data)-1)
-
-        deal_num = 3
-
-        del_index = set()
-        order_key_list = []
-        order_set = set()
-        for index, item in enumerate(history_data):
-            if index == 0:
-                continue
-            if item[1] == NORESULT:
-                del_index.add(index)
-                continue
-            if index not in sim_title_count_single_index:
-                if item[1] in order_set:
-                    continue
-                order_key_list.append(item[1])
-                order_set.add(item[1])
-                index_list = sim_title_count[item[1]][1]
-                for single_index in sim_title_count_single_index:
-                    if single_index not in del_index:
-                        if single_index < index_list[-1]:
-                            del_index.add(single_index)
-                        elif single_index > index_list[-1]:
-                            break
-                deal_num -= 1
-                if deal_num <= 0:
-                    break
-            else:
-                del_index.add(index)
-
-        judge_interval_map = {}  #key:title, value:[[1], [2,3], [4,5]...]
-        tmp_order_key_list = copy.deepcopy(order_key_list)
-        for tmp_key in tmp_order_key_list:
-            judge_interval_map[tmp_key] = []
-            index_list = sim_title_count[tmp_key][1]
-            pre_timestamp = ""
-            tmp_list = []
-            for i, tmp_index in enumerate(index_list):
-                if i == 0:
-                    pre_timestamp = history_data[tmp_index][2]
-                else:
-                    now_timestamp = history_data[tmp_index][2]
-                    diff_seconds = self.get_time_diff(pre_timestamp, now_timestamp, "%d %H:%M:%S")
-                    if diff_seconds > self._delay_music_interval_threshold:
-                        if tmp_list:
-                            judge_interval_map[tmp_key].append(tmp_list)
-                            tmp_list = []
-                    pre_timestamp = history_data[tmp_index][2]
-                tmp_list.append(tmp_index)
-            if tmp_list:
-                judge_interval_map[tmp_key].append(tmp_list)
-
-            if len(judge_interval_map[tmp_key]) > 1:
-                judge_flag = False
-                for tmp_l in judge_interval_map[tmp_key]:
-                    if len(tmp_l) > 1:
-                        sim_title_count[tmp_key][1] = tmp_l
-                        sim_title_count[tmp_key][0] = len(tmp_l)
-                        judge_flag = True
-                        break
-                    else:
-                        if tmp_l:
-                            del_index |= set(tmp_l)
-                if not judge_flag:
-                    sim_title_count[tmp_key][0] = 0
-                    sim_title_count[tmp_key][1] = []
-                    order_key_list.remove(tmp_key)
-
-        retdata = None
-        duration_dict = None
-        another_del_index = set()
-
-        if len(order_key_list) == 3:
-            first_item = sim_title_count[order_key_list[0]]
-            second_item = sim_title_count[order_key_list[1]]
-            third_item = sim_title_count[order_key_list[2]]
-            xflag = 0
-            if first_item[1][-1] < second_item[1][0]:
-                xflag = 0 if first_item[1][-1] < third_item[1][0] else 2
-            else:
-                if first_item[1][-1] < third_item[1][0]:
-                    xflag = 1 if second_item[1][-1] < third_item[1][0] else 2
-                else:
-                    xflag = 2
-            if xflag == 0:
-                start_index = first_item[1][0]
-                end_index = first_item[1][-1]
-                retdata = history_data[start_index][-1]
-                duration_dict =  self.compute_played_duration(history_data, start_index, end_index)
-
-                another_del_index = set(first_item[1])
-            elif xflag == 1:
-                lucky_item = first_item if first_item[0] >= second_item[0] else second_item
-                retdata = history_data[lucky_item[1][0]][-1]
-                start_index = first_item[1][0] if first_item[1][0] < second_item[1][0] else second_item[1][0]
-                end_index = first_item[1][-1] if first_item[1][-1] > second_item[1][-1] else second_item[1][-1]
-
-                duration_dict =  self.compute_played_duration(history_data, start_index, end_index, False)
-
-                another_del_index = set(first_item[1])
-                another_del_index = another_del_index.union(set(second_item[1]))
-            elif xflag == 2:
-                lucky_item = first_item if first_item[0] >= second_item[0] else second_item
-                lucky_item = lucky_item if lucky_item[0] >= third_item[0] else third_item
-                retdata = history_data[lucky_item[1][0]][-1]
-                start_index = min(first_item[1][0], second_item[1][0], third_item[1][0])
-                end_index = max(first_item[1][-1], second_item[1][-1], third_item[1][-1])
-
-                duration_dict =  self.compute_played_duration(history_data, start_index, end_index, False)
-
-                another_del_index = set(first_item[1])
-                another_del_index = another_del_index.union(set(second_item[1]))
-                another_del_index = another_del_index.union(set(third_item[1]))
-        elif len(order_key_list) == 2:
-            first_item = sim_title_count[order_key_list[0]]
-            second_item = sim_title_count[order_key_list[1]]
-            if first_item[1][-1] < second_item[1][0]:
-                start_index = first_item[1][0]
-                end_index = first_item[1][-1]
-                retdata = history_data[start_index][-1]
-
-                duration_dict =  self.compute_played_duration(history_data, start_index, end_index)
-
-                another_del_index = set(first_item[1])
-            else:
-                lucky_item = first_item if first_item[0] >= second_item[0] else second_item
-                retdata = history_data[lucky_item[1][0]][-1]
-                start_index = min(first_item[1][0], second_item[1][0])
-                end_index = max(first_item[1][-1], second_item[1][-1])
-
-                duration_dict =  self.compute_played_duration(history_data, start_index, end_index, False)
-
-                another_del_index = set(first_item[1])
-                another_del_index = another_del_index.union(set(second_item[1]))
-        elif len(order_key_list) == 1:
-            start_index = sim_title_count[order_key_list[0]][1][0]
-            end_index = sim_title_count[order_key_list[0]][1][-1]
-            retdata = history_data[start_index][-1]
-
-            duration_dict =  self.compute_played_duration(history_data, start_index, end_index)
-
-            another_del_index = set(sim_title_count[order_key_list[0]][1])
-
-        if another_del_index and max(another_del_index) < len(history_data)-1:
-            del_index = del_index.union(another_del_index)
-        else:
-            retdata = None
-
-        del_index.add(0)
-        remove_del_index = -1
-        del_index_tmp_list = sorted(list(del_index))
-        for i, del_i in enumerate(del_index_tmp_list):
-            if i != del_i:
-                remove_del_index = del_index_tmp_list[i-1]
-                break
-        if remove_del_index == -1:
-            remove_del_index = del_index_tmp_list[-1]
-        if remove_del_index != -1:
-            del_index.remove(remove_del_index)
-
-        after_del_history_data = []
-        for index in range(len(history_data)):
-            if index not in del_index:
-                after_del_history_data.append(history_data[index])
-
-        self._delay_music[stream_id] = after_del_history_data
-
-        #compare now retdata title and last_result title
-        #if equal, and time interval in 10min, then return None
-        if retdata:
-            ret_timestamp = retdata.get("timestamp")
-            ret_title = self.get_mutil_result_title(retdata, 'music', 1)[0]
-            if self._delay_music_last_result.has_key(stream_id):
-                if ret_title == self._delay_music_last_result[stream_id][0]:
-                    ret_time_obj = datetime.datetime.strptime(ret_timestamp, '%d %H:%M:%S')
-                    last_time_obj = datetime.datetime.strptime(self._delay_music_last_result[stream_id][1], '%d %H:%M:%S')
-                    if (ret_time_obj - last_time_obj).total_seconds() < 5*60:
-                        retdata = None
-                else:
-                    self._delay_music_last_result[stream_id] = (ret_title, ret_timestamp)
-            else:
-                self._delay_music_last_result[stream_id] = (ret_title, ret_timestamp)
-
-        if retdata:
-            duration = duration_dict["duration"]
-            duration_accurate = duration_dict["duration_accurate"]
-            sample_duration = duration_dict["sample_duration"]
-            db_duration = duration_dict["db_duration"]
-            mix_duration = duration_dict["mix_duration"]
-            accurate_timestamp_utc = duration_dict["accurate_timestamp_utc"]
-
-            ret_duration = mix_duration
-            duration_s = self.get_data_duration_ms(retdata)
-            if duration_s != -1:
-                diff_ret_duration = duration_s - ret_duration
-                if diff_ret_duration < 0 and abs(diff_ret_duration) >= 60:
-                    ret_duration = duration_accurate
-            retdata['result']['metadata']['played_duration'] = abs(ret_duration)
-            retdata['result']['metadata']['timestamp_utc'] = accurate_timestamp_utc
-            retdata['timestamp'] = accurate_timestamp_utc
-        return retdata
-
-
-    def get_music_duration_by_title(self, title, ret_data):
-        try:
-            duration = 0
-            for index, item in enumerate(ret_data["result"]["metadata"]["music"]):
-                if title == item["title"]:
-                    duration_ms = int(item["duration_ms"])
-                    if duration_ms >= 0:
-                        duration = int(duration_ms/1000)
-        except Exception as e:
-            self._dlog.logger.error("Error@get_music_duration_by_title, error_data:{0}".format(ret_data), exc_info=True)
-        return duration
-
-    def dynamic_judge_size_for_music_delay2(self, deal_title_map, history_data):
-        #Just for music delay2 filter
-        try:
-            judge_size = 4
-            title = list(deal_title_map.keys())[0]
-            index = deal_title_map[title]["index_list"][-1]
-            ret_data = history_data[index][3]
-            duration = self.get_music_duration_by_title(title, ret_data)
-            tmp_size = int(duration/10)
-            if tmp_size <=4:
-                judge_size = tmp_size if tmp_size > 1 else 2
-        except Exception as e:
-            self._dlog.logger.error("Error@dynamic_judge_size_for_music_delay2", exc_info=True)
-        return judge_size if judge_size >= 2 else 2
-
     def remove_next_result_from_now_result_list_for_music_delay2(self, history_data, ret_data, max_index):
         #Just for music delay2 filter
         try:
@@ -770,9 +517,197 @@ class ResultFilter:
         except Exception as e:
             self._dlog.logger.error("Error@result_append_for_music_delay2", exc_info=True)
 
+    def get_custom_duration_by_title(self, title, ret_data):
+        try:
+            duration = 0
+            db_end_offset = 0
+            for index, item in enumerate(ret_data["result"]["metadata"]["custom_files"]):
+                #custom 获取的title是acrid
+                if title == item["acrid"]:
+                    duration_ms = int(item["duration_ms"])
+                    db_end_offset_ms = int(item["db_end_time_offset_ms"])
+                    if duration_ms >= 0:
+                        duration = int(duration_ms/1000)
+                    if db_end_offset_ms:
+                        db_end_offset = int(db_end_offset_ms/1000)
+        except Exception as e:
+            self._dlog.logger.error("Error@get_custom_duration_by_title, error_data:{0}".format(ret_data), exc_info=True)
+        return duration, db_end_offset
+
+    def get_music_duration_by_title(self, title, ret_data):
+        try:
+            duration = 0
+            db_end_offset = 0
+            if "metadata" in ret_data["result"] and "music" in ret_data["result"]["metadata"]:
+                for index, item in enumerate(ret_data["result"]["metadata"]["music"]):
+                    if title == item["title"]:
+                        duration_ms = int(item["duration_ms"])
+                        db_end_offset_ms = int(item["db_end_time_offset_ms"])
+                        if duration_ms >= 0:
+                            duration = int(duration_ms/1000)
+                        if db_end_offset_ms:
+                            db_end_offset = int(db_end_offset_ms/1000)
+        except Exception as e:
+            self._dlog.logger.error("Error@get_custom_duration_by_title, error_data:{0}".format(ret_data), exc_info=True)
+        return duration, db_end_offset
+
+    def delay_dynamic_judge_size(self, deal_title_map, history_data, itype):
+        try:
+            judge_size = 5
+            if itype == "custom":
+                title = sorted(deal_title_map.items(), key=lambda x:x[1]["score"], reverse=True)[0][0]
+            else:
+                title = deal_title_map.keys()[0]
+
+            index = deal_title_map[title]["index_list"][-1]
+            if itype == "custom":
+                ret_data = history_data[index][2]
+            else:
+                ret_data = history_data[index][3]
+
+            monitor_len = ret_data.get("monitor_seconds", 10)
+
+            if itype == "custom":
+                duration, db_end_offset = self.get_custom_duration_by_title(title, ret_data)
+            else:
+                duration, db_end_offset = self.get_music_duration_by_title(title, ret_data)
+
+            if db_end_offset > 0  and db_end_offset < duration:
+                judge_size = abs(int(math.ceil(db_end_offset*1.0/monitor_len))) + 1
+            if judge_size > 10:
+                judge_size = 10
+            if judge_size <= 3:
+                judge_size = 3
+                if itype == "custom":
+                    judge_size = 1
+        except Exception as e:
+            self._dlog.logger.error("Error@delay_dynamic_judge_size", exc_info=True)
+        return judge_size+1
+
+    def fill_ret_data_by_acrid_count(self, sorted_title_list, history_data):
+        try:
+            ret_data = None
+            init_ret_data = True
+            for sitem in sorted_title_list:
+                sitem_title, sitem_map = sitem
+                sitem_title = self.tryStrSub(sitem_title)[0]
+                sitem_count = sitem_map["count"]
+                acrid_count_map = {}
+                for tindex in sitem_map["index_list"]:
+                    tdata = history_data[tindex][3]
+                    if init_ret_data:
+                        ret_data = copy.deepcopy(tdata)
+                        ret_data["result"]["metadata"]["music"] = []
+                        init_ret_data = False
+                    if "metadata" in tdata["result"] and "music" in tdata["result"]["metadata"]:
+                        for item in tdata['result']['metadata']['music']:
+                            sim_title = self.tryStrSub(item['title'])[0]
+                            if sim_title == sitem_title:
+                                acrid = item['acrid']
+                                if acrid not in acrid_count_map:
+                                    acrid_count_map[acrid] = {"count":0, "info":item}
+                                acrid_count_map[acrid]["count"] += 1
+                if ret_data is None:
+                    break
+
+                acrid_count_map_sorted = sorted(acrid_count_map.items(), key=lambda x:x[1]["count"], reverse=True)
+                for s_index, s_item in enumerate(acrid_count_map_sorted):
+                    ret_data["result"]["metadata"]["music"].append(s_item[1]["info"])
+                    if s_index >= 2:
+                        break
+            if ret_data is not None and len(ret_data['result']['metadata']['music']) > 6:
+                ret_data['result']['metadata']['music'] = ret_data['result']['metadata']['music'][:6]
+        except Exception as e:
+            self._dlog.logger.error("Error@fill_ret_data_by_acrid_count", exc_info=True)
+        return ret_data
+
+    def get_music_data_offset(self, data):
+        try:
+            ret = {
+                "monitor_len":0,
+                "duration_ms":0,
+                "s_begin_ms":0,
+                "s_end_ms":0,
+                "d_begin_ms":0,
+                "d_end_ms":0
+            }
+            result = data.get("result")
+            monitor_len = data.get("monitor_seconds", 10)
+            ret["monitor_len"] = monitor_len
+            if result and "metadata" in result and "music" in result["metadata"]:
+                fitem = result["metadata"]["music"][0]
+                ret["duration_ms"] = int(fitem["duration_ms"])
+                ret["s_begin_ms"] = int(fitem["sample_begin_time_offset_ms"])
+                ret["s_end_ms"] = int(fitem["sample_end_time_offset_ms"])
+                ret["d_begin_ms"] = int(fitem["db_begin_time_offset_ms"])
+                ret["d_end_ms"] = int(fitem["db_end_time_offset_ms"])
+                return ret
+        except Exception as e:
+            self._dlog.logger.error("Error@get_music_data_offset, error_data:{0}".format(data), exc_info=True)
+        return None
+
+    def check_if_is_break(self, index1, index2, data1, data2):
+        try:
+            is_break = False
+            ret1 = self.get_music_data_offset(data1)
+            ret2 = self.get_music_data_offset(data2)
+            if ret1 and ret2:
+                diff_db = ret2["d_end_ms"] - ret1["d_begin_ms"]
+                if diff_db <= 0:
+                    return is_break
+                timestamp1 = datetime.datetime.strptime(data1["timestamp"], "%H:%M:%S")
+                timestamp2 = datetime.datetime.strptime(data2["timestamp"], "%H:%M:%S")
+                monitor_len = ret1["monitor_len"]
+                A1 = timestamp1 + relativedelta(seconds=int(ret1["s_begin_ms"]/1000))
+                A2 = timestamp2 + relativedelta(seconds=int(ret2["s_end_ms"]/1000))
+                B1 = int((A2 - A1).total_seconds())
+                B2 = (index2 - index1 - 1)*monitor_len + int(diff_db/1000)
+                B3 = int(diff_db/1000)
+                if abs(B3 - B1) <= 15:
+                    is_break = False
+                elif abs(B2 - B1) <= 10:
+                    is_break = True
+        except Exception as e:
+            self._dlog.logger.error("Error@check_if_is_break", exc_info=True)
+        return is_break
+
+    def check_if_continuous(self, index1, index2, data1, data2):
+        try:
+            is_cont = True
+            ret1 = self.get_music_data_offset(data1)
+            ret2 = self.get_music_data_offset(data2)
+            timestamp1 = datetime.datetime.strptime(data1["timestamp"], "%H:%M:%S")
+            timestamp2 = datetime.datetime.strptime(data2["timestamp"], "%H:%M:%S")
+            diff_sec = (timestamp2 - timestamp1).total_seconds()
+            monitor_len = ret1["monitor_len"]
+            if ret1 and ret2:
+                for tmp_ret in [ret1, ret2]:
+                    if (tmp_ret["s_end_ms"] - tmp_ret["s_begin_ms"]) != (tmp_ret["d_end_ms"] - tmp_ret["d_begin_ms"]):
+                        return is_cont
+                dur1 = ret1["d_end_ms"] - ret1["d_begin_ms"]
+                dur2 = ret2["d_end_ms"] - ret2["d_begin_ms"]
+                dur1 = dur1 if dur1 > 0 else 0
+                dur2 = dur2 if dur2 > 0 else 0
+                ret1_s_end = ret1["s_end_ms"]
+                ret2_s_begin = ret2["s_begin_ms"]
+                if index1+1 == index2 and abs(monitor_len*1000 - ret1_s_end) < 2500 and abs(ret2_s_begin) < 2500 and diff_sec < monitor_len*2:
+                    pass
+                else:
+                    ifirst, iend = max(ret1["d_begin_ms"], ret2["d_begin_ms"]), min(ret1["d_end_ms"], ret2["d_end_ms"])
+                    inter_dur = iend - ifirst
+                    if inter_dur > 0:
+                        min_dur = min(dur1, dur2) if min(dur1, dur2) > 0 else max(dur1, dur2)
+                        if min_dur > 0:
+                            inter_rate = (inter_dur*1.0/min_dur)
+                            if inter_dur >=2 and inter_rate >=0.8:
+                                is_cont = False
+        except Exception as e:
+            self._dlog.logger.error("Error@check_if_continuous", exc_info=True)
+        return is_cont
 
     def runDelayX_for_music_delay2(self, stream_id):
         history_data = self._delay_music[stream_id]
+        judge_zero_or_latter = True
 
         if len(history_data) >= self._delay_list_threshold:
             history_data = history_data[-(self._delay_list_threshold-1):]
@@ -815,8 +750,11 @@ class ResultFilter:
                     tmp_all_len = len(history_data)
                     tmp_count = 0
                     tmp_first_break_index = -1
-                    tmp_judge_size = 2
-                    #tmp_judge_size = 5 if tmp_judge_size < 5 else tmp_judge_size
+                    #tmp_judge_size = 2
+                    tmp_judge_size = self.delay_dynamic_judge_size(deal_title_map, history_data, "music")
+                    find_interval = False
+                    find_pre_last_index = index-1
+                    find_next_sim_index = -1
                     for i in range(index, tmp_all_len):
                         next_raw_title, next_sim_title, next_timestamp, next_data = history_data[i]
                         tmp_list_flag = False
@@ -824,13 +762,26 @@ class ResultFilter:
                             tmp_list_flag = True
                             tmp_count = 0
                             tmp_first_break_index = -1
+                            if find_interval == True:
+                                find_interval = False
+                                find_next_sim_index = i
+                                if find_next_sim_index - find_pre_last_index - 1 >= 8:
+                                    is_break = self.check_if_is_break(find_pre_last_index, find_next_sim_index, history_data[find_pre_last_index][3], history_data[find_next_sim_index][3])
+                                    if is_break:
+                                        break_index = find_pre_last_index + 1
+                                        break
+                        else:
+                            if find_interval == False:
+                                find_interval = True
+                                find_pre_last_index = i - 1
+
                         if tmp_list_flag:
                             continue
                         else:
                             tmp_count += 1
                             if tmp_first_break_index == -1:
                                 tmp_first_break_index = i
-                            if tmp_count <= tmp_judge_size:
+                            if tmp_count < tmp_judge_size:
                                 continue
                             flag_second = True
                             break_index = tmp_first_break_index if tmp_first_break_index != -1 else i
@@ -845,6 +796,18 @@ class ResultFilter:
                             if tmp_sim_title in deal_title_map:
                                 deal_title_map[tmp_sim_title]['count'] += 1
                                 deal_title_map[tmp_sim_title]['index_list'].append(iii)
+                        #**********************************************************
+                        sorted_dtitle = sorted(deal_title_map.items(), key = lambda x:x[1]['count'], reverse = True)
+                        sorted_fitem_title, sorted_fitem_map = sorted_dtitle[0]
+                        sfm_count = sorted_fitem_map["count"]
+                        cfirst_index, csecond_index = sorted(sorted_fitem_map["index_list"])[:2] if sfm_count >=2 else [0, 0]
+                        if sfm_count in [2, 3]: #or ((3 < sfm_count <= 10) and sfm_count < (break_index - index)):
+                            is_cont = self.check_if_continuous(cfirst_index, csecond_index, history_data[cfirst_index][3], history_data[csecond_index][3])
+                            if not is_cont:
+                                judge_zero_or_latter = False
+                                break_index = cfirst_index + 1
+                                deal_title_map = {sorted_fitem_title:{'count':1, 'index_list':[cfirst_index]}}
+                        #**********************************************************
                     #跳出
                     break
 
@@ -860,34 +823,17 @@ class ResultFilter:
         duration_dict = {}
         duration = 0
         if break_index > 0 and deal_title_map:
-            tmp_count_map = {}
             sorted_title_list = sorted(deal_title_map.items(), key = lambda x:x[1]['count'], reverse = True)
-            for sitem in sorted_title_list:
-                sitem_title, sitem_map = sitem
-                sitem_count = sitem_map["count"]
-                sitem_min_index = min(sitem_map["index_list"])
-                if sitem_count not in tmp_count_map:
-                    tmp_count_map[sitem_count] = []
-                tmp_count_map[sitem_count].append((sitem_title, sitem_min_index))
-            first_item_flag = True
-            for scount in sorted(tmp_count_map.keys(), reverse=True):
-                count_list = sorted(tmp_count_map[scount], key = lambda x:x[1])
-                for ditem in count_list:
-                    dtitle, dindex = ditem
-                    from_data = history_data[dindex][3]
-                    if first_item_flag:
-                        first_item_flag = False
-                        ret_data = copy.deepcopy(from_data)
-                        ret_data["result"]["metadata"]["music"] = []
-
-                    self.result_append_for_music_delay2(ret_data, dtitle, from_data)
+            ret_data = self.fill_ret_data_by_acrid_count(sorted_title_list, history_data)
+            if ret_data and len(ret_data["result"]["metadata"]["music"]) == 0:
+                ret_data = None
 
             index_range = set()
             for title in deal_title_map:
                 index_range |= set(deal_title_map[title]['index_list'])
             min_index = min(index_range)
             max_index = max(index_range)
-            duration_dict = self.compute_played_duration(history_data, min_index, max_index, True, "music")
+            duration_dict = self.compute_played_duration(history_data, min_index, max_index, judge_zero_or_latter, "music")
 
             self.remove_next_result_from_now_result_list_for_music_delay2(history_data, ret_data, max_index)
 
@@ -931,6 +877,12 @@ class ResultFilter:
                 else:
                     pass
 
+            if judge_zero_or_latter == False and len(history_data) > 0:
+                if history_data[0][0] != NORESULT:
+                    tmp_t, sim_tmp_t, tmp_timestamp, tmp_data = history_data[0]
+                    if tmp_data and "status" in tmp_data["result"]:
+                        tmp_data["result"]["status"]["code"] = 1001
+                        history_data[0] = (NORESULT, NORESULT, tmp_timestamp, tmp_data)
             self._delay_music[stream_id] = history_data
 
         return ret_data
@@ -943,7 +895,7 @@ class ResultFilter:
 
         stream_id = data.get("stream_id")
         timestamp = data.get("timestamp")
-        timestamp_obj = datetime.datetime.strptime(timestamp, "%d %H:%M:%S")
+        timestamp_obj = datetime.datetime.strptime(timestamp, "%H:%M:%S")
         if not stream_id:
             return result, is_new
         if curr_title == NORESULT:
@@ -977,7 +929,8 @@ class ResultFilter:
             else:
                 self._delay_custom[stream_id].append((title_list, timestamp, data))
 
-            ret_result = self.runDelayX_custom(stream_id)
+            if len(self._delay_custom[stream_id]) >= self._delay_list_max_num:
+                ret_result = self.runDelayX_custom(stream_id)
         except Exception as e:
             self._dlog.logger.error("Error@deal_delay_custom", exc_info=True)
         return ret_result
@@ -1021,6 +974,8 @@ class ResultFilter:
             tmp_size = int(duration/10)
             if tmp_size <=6:
                 judge_size = tmp_size if tmp_size > 1 else 2
+            elif tmp_size >= 18:
+                judge_size = 18
         except Exception as e:
             self._dlog.logger.error("Error@custom_delay_dynamic_judge_size", exc_info=True)
 
@@ -1040,6 +995,19 @@ class ResultFilter:
                     history_data = history_data[-(ii+1):]
                     break
 
+        first_not_noresult_index = -1
+        for index, item in enumerate(history_data):
+            if index == 0:
+                continue
+            if len(item[0])>0 and item[0][0] == NORESULT:
+                first_not_noresult_index = index
+            else:
+                break
+        if first_not_noresult_index != -1:
+            history_data = history_data[first_not_noresult_index:]
+            self._delay_custom[stream_id] = history_data
+            return None
+
         deal_title_map = {} #key:title, value:{'count':0, 'index_list':[]}
         tmp_deal_title_map = {}
         break_index = 0
@@ -1050,7 +1018,7 @@ class ResultFilter:
             if index!=1:
                 flag_first = True
                 flag_second = True
-                for title in title_list[:1]:
+                for title in title_list[:3]:
                     if title in deal_title_map:
                         flag_first = False
                 if flag_first:
@@ -1058,7 +1026,7 @@ class ResultFilter:
                     for i in range(1,judge_size):
                         if index + i < len(history_data):
                             next_title_list, next_timestamp, next_data = history_data[index + i]
-                            for title in next_title_list[:1]:
+                            for title in next_title_list[:3]:
                                 if title in deal_title_map:
                                     flag_second = False
                         else:
@@ -1230,9 +1198,9 @@ class FilterWorker:
     def end_filter(self, tmp_id, rec_length, timestamp):
         try:
             tmp_no_result = copy.deepcopy(self.tmp_no_result)
-            for i in range(1, 30):
-                tmp_timestamp = datetime.datetime.strptime(timestamp, "%d %H:%M:%S")
-                new_timestamp = (tmp_timestamp + relativedelta(seconds=int(i*rec_length))).strftime("%d %H:%M:%S")
+            for i in range(1, 60):
+                tmp_timestamp = datetime.datetime.strptime(timestamp, "%H:%M:%S")
+                new_timestamp = (tmp_timestamp + relativedelta(seconds=int(i*rec_length))).strftime("%H:%M:%S")
                 jsoninfo = {
                     "stream_id": tmp_id,
                     "rec_length": rec_length,

@@ -8,6 +8,7 @@ import json
 import codecs
 import optparse
 import logging
+import openpyxl
 from backports import csv
 from openpyxl import Workbook
 from acrcloud_logger import AcrcloudLogger
@@ -17,6 +18,7 @@ from acrcloud.recognizer import ACRCloudRecognizer
 if sys.version_info.major == 2:
     reload(sys)
     sys.setdefaultencoding("utf8")
+
 
 class ACRCloud_Scan_Files:
 
@@ -28,6 +30,7 @@ class ACRCloud_Scan_Files:
             'debug': False,
             'timeout': 10  # seconds
         }
+        self.openpyxl_version = ".".join(str(openpyxl.__version__).split(".")[:2])
         self.config_file = config_file
         self.init_log()
         self.init_config()
@@ -122,7 +125,10 @@ class ACRCloud_Scan_Files:
                 length = max(len(str(cell.value) if cell.value else "") for cell in column_cells)
                 if length > 100:
                     length == 100
-                sheet_channels.column_dimensions[column_cells[0].column_letter].width = length
+                if self.openpyxl_version >= "2.6":
+                    sheet_channels.column_dimensions[column_cells[0].column_letter].width = length
+                else:
+                    sheet_channels.column_dimensions[column_cells[0].column].width = length
             wb.save(export_filepath)
 
             self.dlog.logger.info("export_to_xlsx.Save Data to xlsx: {0}".format(export_filepath))
@@ -140,16 +146,28 @@ class ACRCloud_Scan_Files:
                 item = metadata["music"][0]
                 title = item.get("title", "")
                 offset = item.get("play_offset_ms", "")
-                isrc = item.get("external_ids", {"isrc":""}).get("isrc","")
-                upc = item.get("external_ids", {"upc":""}).get("upc","")
+                if "external_ids" in item:
+                    if "isrc" in item["external_ids"]:
+                        isrc_obj = item["external_ids"]["isrc"]
+                        isrc = isrc_obj[0] if type(isrc_obj) == list else isrc_obj
+                    if "upc" in item["external_ids"]:
+                        upc_obj = item["external_ids"]["upc"]
+                        upc = upc_obj[0] if type(upc_obj) == list else upc_obj
                 acrid = item.get("acrid","")
                 label = item.get("label", "")
                 album = item.get("album", {"name":""}).get("name", "")
                 artists =  ",".join([ ar["name"] for ar in item.get('artists', [{"name":""}]) if ar.get("name") ])
-                deezer = item.get("external_metadata", {"deezer":{"track":{"id":""}}}).get("deezer", {"track":{"id":""}}).get("track", {"id":""}).get("id", "")
-                spotify = item.get("external_metadata", {"spotify":{"track":{"id":""}}}).get("spotify", {"track":{"id":""}}).get("track", {"id":""}).get("id", "")
-                itunes = item.get("external_metadata", {"itunes":{"track":{"id":""}}}).get("itunes", {"track":{"id":""}}).get("track", {"id":""}).get("id", "")
-                youtube = item.get("external_metadata", {"youtube":{"vid":""}}).get("youtube", {"vid":""}).get("vid", "")
+                if "external_metadata" in item:
+                    e_metadata = item["external_metadata"]
+                    if "deezer" in e_metadata:
+                        deezer_obj = e_metadata["deezer"]
+                        deezer = deezer_obj[0]["track"]["id"] if type(deezer_obj) == list else deezer_obj["track"]["id"]
+                    if "spotify" in e_metadata:
+                        spotify_obj = e_metadata["spotify"]
+                        spotify = spotify_obj[0]["track"]["id"] if type(spotify_obj)==list  else spotify_obj["track"]["id"]
+                    if "youtube" in e_metadata:
+                        youtube_obj = e_metadata["youtube"]
+                        youtube = youtube_obj[0]["vid"] if type(youtube_obj)==list else youtube_obj["vid"]
 
             if "custom_files" in metadata and len(metadata["custom_files"]) > 0:
                 custom_item = metadata["custom_files"][0]
@@ -169,7 +187,7 @@ class ACRCloud_Scan_Files:
 
     def do_recognize(self, filepath, start_time, rec_length):
         try:
-            current_time = time.strftime('%d %H:%M:%S', time.gmtime(start_time))
+            current_time = time.strftime('%H:%M:%S', time.gmtime(start_time))
             res_data = self.re_handler.recognize_by_file(filepath, start_time, rec_length)
             return filepath, current_time, res_data
         except Exception as e:
@@ -189,7 +207,8 @@ class ACRCloud_Scan_Files:
                 if "status" in jsoninfo  and jsoninfo["status"]["code"] ==0 :
                     result.append({"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep})
                     res = self.parse_data(jsoninfo)
-                    self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
+                    #self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
+                    self.dlog.logger.info('recognize_file.(time:{0}, title: {1}, custom title: {2})'.format(current_time, res[0], res[-2]))
                 if code == 2005:
                     self.dlog.logger.warning('recognize_file.(time:{0}, code:{1}, Done!)'.format(current_time, code))
                     break
