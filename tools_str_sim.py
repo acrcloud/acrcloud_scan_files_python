@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
+"""
+author: hong
+Copyright (c) 2011 Adam Cohen
+......
 
 """
-Author: qiang@acrcloud.com
-"""
-
 import re
-import os
 import sys
+import string
 from fuzzywuzzy import fuzz
 
-if sys.version_info.major == 2:
-    reload(sys)
-    sys.setdefaultencoding("utf8")
+reload(sys)
+sys.setdefaultencoding("utf8")
 
 RE_SPECIAL_STRING = """[ \[\]［］\(\)（）\n\t\r,\.\:"'‘“<>《》!！?？&]"""
 RE_SUB_STRING = "(\(.*\))|(\[.*\])|(（.*）)"
@@ -20,12 +20,12 @@ THREADHOLD = 75
 
 #https://stackoverflow.com/questions/286921/efficiently-replace-all-accented-characters-in-a-string
 latin_map={
-u"Á":u"A",
-u"Ă":u"A",
-u"Ắ":u"A",
-u"Ặ":u"A",
-u"Ằ":u"A",
-u"Ẳ":u"A",
+u"Á":"A",
+u"Ă":"A",
+u"Ắ":"A",
+u"Ặ":"A",
+u"Ằ":"A",
+u"Ẳ":"A",
 u"Ẵ":"A",
 u"Ǎ":"A",
 u"Â":"A",
@@ -396,7 +396,8 @@ u"ᴠ":"V",
 u"ᴡ":"W",
 u"ʏ":"Y",
 u"ᴢ":"Z",
-u"á":u"a",
+u"á":"a",
+#"á":"a",
 u"ă":"a",
 u"ắ":"a",
 u"ặ":"a",
@@ -863,49 +864,38 @@ def str_filter_sub(old_str):
 def str_filter(old_str):
     return re.sub(RE_SPECIAL_STRING, '', old_str).strip()
 
+def remove_punct(input_str):
+    if not input_str:
+        return input_str
+    del_estr = string.punctuation
+    replace = " "*len(del_estr)
+    tran_tab = string.maketrans(del_estr, replace)
+    input_str = input_str.translate(tran_tab)
+    return " ".join(input_str.split())
+
 def str_sub(old_str):
     old_str = old_str.lower()
     new_str = re.sub(RE_SUB_STRING, "", old_str).strip()
     if new_str.find(" - ") != -1:
         new_str = new_str[:new_str.find(" - ")]
     new_str = latinize(new_str)
-    return new_str.strip()
+    new_str = remove_punct(new_str.strip())
+    return new_str
 
 def str_sim(str1_old, str2_old):
-	'''
-	warning: do not str1=str(str1)
-	'''
-	str1 = str(str1_old)
-	str2 = str(str2_old)
+    '''
+    warning: do not str1=str(str1)
+    '''
+    str1 = str(str1_old)
+    str2 = str(str2_old)
 
-	format_str1 = str_filter(str1.lower().strip())
-	format_str2 = str_filter(str2.lower().strip())
-	if format_str1 == format_str2 \
-		or format_str1.find(format_str2) != -1 \
-		or format_str2.find(format_str1) != -1:
-		return True, ""
+    format_str1 = str_filter(str1.lower().strip())
+    format_str2 = str_filter(str2.lower().strip())
+    if format_str1 == format_str2 or format_str1.find(format_str2) != -1 or format_str2.find(format_str1) != -1:
+	return True, ""
 
-	format_str1 = str_filter_sub(str1.lower().strip())
-	format_str2 = str_filter_sub(str2.lower().strip())
-	ratio = fuzz.ratio(format_str1, format_str2)
-	return ratio >= THREADHOLD \
-			or format_str1 == format_str2 \
-			or format_str1.find(format_str2) != -1 \
-			or format_str2.find(format_str1) != -1 , str(ratio)
+    format_str1 = str_filter_sub(str1.lower().strip())
+    format_str2 = str_filter_sub(str2.lower().strip())
+    ratio = fuzz.ratio(format_str1, format_str2)
+    return ratio >= THREADHOLD or format_str1 == format_str2 or format_str1.find(format_str2) != -1 or format_str2.find(format_str1) != -1 , str(ratio)
 
-if __name__ == "__main__":
-    """
-    a = "Wish I Knew You - Single Mix"
-    print str_sub(a)
-    print str_filter(a)
-    print str_sim("wish i knew you - single mix", "wish i knew you")
-    print fuzz.ratio("wish i knew you - single mix", "wish i knew you")
-    """
-
-    a = u"La bámbola"#"Location (Remix)"
-    b = u"La Bambola"#"Location"
-    print ("raw:{0},  sub:{1}, filter:{2}".format(a, str_sub(a), str_filter(a)))
-    print ("raw:{0},  sub:{1}, filter:{2}".format(b, str_sub(b), str_filter(b)))
-    print (str_sim(a, b))
-
-    print (a, latinize(a))
