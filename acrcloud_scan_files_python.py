@@ -237,6 +237,13 @@ class ACRCloud_Scan_Files:
             rec_length = option.rec_length
             with_duration = option.with_duration
             out_dir = option.out_dir
+            if out_dir and not os.path.exists(out_dir):
+                try:
+                    os.makedirs(out_dir)
+                except Exception as e:
+                    self.dlog.logger.error("scan_file_main.create_out_dir_error:{0}, please check it!".format(out_dir), exc_info=True)
+                    return
+
             file_type = option.file_type
             if start_time == 0 and stop_time == 0:
                 file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
@@ -264,6 +271,7 @@ class ACRCloud_Scan_Files:
                     self.export_to_xlsx(new_results, filename_with_duration_xlsx, out_dir)
         except Exception as e:
             self.dlog.logger.error("scan_file_main.error", exc_info=True)
+        return
 
 
     def scan_folder_main(self, option, start_time, stop_time):
