@@ -1230,6 +1230,7 @@ class FilterWorker:
         try:
             appid = datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
             rec_length = 10
+            timestamp = None
             for index, item in enumerate(result_list):
                 filename = item["file"]
                 timestamp = item["timestamp"]
@@ -1239,7 +1240,8 @@ class FilterWorker:
                 result = item["result"]
                 if "status" in result and result["status"]["code"] in [0, 1001]:
                     self.do_filter(appid, filename, result, rec_length, timestamp)
-            self.end_filter(appid, rec_length, timestamp)
+            if timestamp is not None:
+                self.end_filter(appid, rec_length, timestamp)
         except Exception as e:
             self.dlog.logger.error("Error@apply_filter", exc_info=True)
         return self._result_map
