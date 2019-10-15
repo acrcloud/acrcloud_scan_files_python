@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 import os
 import sys
@@ -37,7 +37,7 @@ class ACRCloud_Scan_Files:
 
     def init_log(self):
         self.dlog = AcrcloudLogger('ACRCloud_ScanF', logging.INFO)
-        if not self.dlog.addFilehandler(logfile = "log_scan_files.log", logdir = "./", loglevel = logging.WARN):
+        if not self.dlog.addFilehandler(logfile="log_scan_files.log", logdir="./", loglevel=logging.WARN):
             sys.exit(1)
         if not self.dlog.addStreamHandler():
             sys.exit(1)
@@ -69,7 +69,7 @@ class ACRCloud_Scan_Files:
                 yield line.strip()
 
     def write_error(self, file_path, error_time, error_detail):
-        with open('error_scan.txt', 'a',) as f:
+        with open('error_scan.txt', 'a', ) as f:
             msg = file_path + '||' + str(error_time) + '||' + str(error_detail) + '\n'
             f.write(msg)
 
@@ -100,6 +100,36 @@ class ACRCloud_Scan_Files:
                 self.dlog.logger.info("export_to_csv.Save Data to csv: {0}".format(export_filepath))
         except Exception as e:
             self.dlog.logger.error("Error export_to_csv", exc_info=True)
+
+    def export_to_json(self, result_list, export_filename="ACRCloud_ScanFile_Results.json", export_dir="./"):
+        try:
+            results = []
+            json_results = []
+            new_results = {}
+            export_filepath = os.path.join(export_dir, export_filename)
+
+            head_row = ['filename', 'timestamp', 'title', 'artists', 'album', 'acrid', 'played_duration', 'label',
+                        'isrc', 'upc', 'deezer', 'spotify', 'itunes', 'youtube', 'custom_files_title', 'audio_id']
+
+            for item in result_list:
+                filename = item["file"]
+                timestamp = item["timestamp"]
+                jsoninfo = item["result"]
+                if "status" in jsoninfo and jsoninfo["status"]["code"] == 0:
+                    row = self.parse_data(jsoninfo)
+                    row = [filename, timestamp] + list(row)
+                    results.append(row)
+
+            for i in results:
+                for k in range(len(head_row)):
+                    new_results[head_row[k]] = i[k]
+
+                json_results.append(new_results)
+
+            with codecs.open(export_filepath, 'w', 'utf-8-sig') as f:
+                f.write(json.dumps(json_results))
+        except Exception as e:
+            self.dlog.logger.error("Error export_to_json", exc_info=True)
 
     def export_to_xlsx(self, result_list, export_filename="ACRCloud_ScanFile_Results.xlsx", export_dir="./"):
         try:
@@ -137,8 +167,8 @@ class ACRCloud_Scan_Files:
 
     def parse_data(self, jsoninfo):
         try:
-            title, played_duration, isrc, upc, acrid, label, album = [""]*7
-            artists, deezer, spotify, itunes, youtube, custom_files_title, audio_id  = [""]*7
+            title, played_duration, isrc, upc, acrid, label, album = [""] * 7
+            artists, deezer, spotify, itunes, youtube, custom_files_title, audio_id = [""] * 7
 
             metadata = jsoninfo.get('metadata', {})
             played_duration = metadata.get("played_duration", "")
@@ -153,10 +183,10 @@ class ACRCloud_Scan_Files:
                     if "upc" in item["external_ids"]:
                         upc_obj = item["external_ids"]["upc"]
                         upc = upc_obj[0] if type(upc_obj) == list else upc_obj
-                acrid = item.get("acrid","")
+                acrid = item.get("acrid", "")
                 label = item.get("label", "")
-                album = item.get("album", {"name":""}).get("name", "")
-                artists =  ",".join([ ar["name"] for ar in item.get('artists', [{"name":""}]) if ar.get("name") ])
+                album = item.get("album", {"name": ""}).get("name", "")
+                artists = ",".join([ar["name"] for ar in item.get('artists', [{"name": ""}]) if ar.get("name")])
                 if "external_metadata" in item:
                     e_metadata = item["external_metadata"]
                     if "deezer" in e_metadata:
@@ -164,10 +194,11 @@ class ACRCloud_Scan_Files:
                         deezer = deezer_obj[0]["track"]["id"] if type(deezer_obj) == list else deezer_obj["track"]["id"]
                     if "spotify" in e_metadata:
                         spotify_obj = e_metadata["spotify"]
-                        spotify = spotify_obj[0]["track"]["id"] if type(spotify_obj)==list  else spotify_obj["track"]["id"]
+                        spotify = spotify_obj[0]["track"]["id"] if type(spotify_obj) == list else spotify_obj["track"][
+                            "id"]
                     if "youtube" in e_metadata:
                         youtube_obj = e_metadata["youtube"]
-                        youtube = youtube_obj[0]["vid"] if type(youtube_obj)==list else youtube_obj["vid"]
+                        youtube = youtube_obj[0]["vid"] if type(youtube_obj) == list else youtube_obj["vid"]
 
             if "custom_files" in metadata and len(metadata["custom_files"]) > 0:
                 custom_item = metadata["custom_files"][0]
@@ -191,7 +222,8 @@ class ACRCloud_Scan_Files:
             res_data = self.re_handler.recognize_by_file(filepath, start_time, rec_length)
             return filepath, current_time, res_data
         except Exception as e:
-            self.dlog.logger.error("do_recognize.error.({0}, {1}, {2})".format(filepath,start_time,rec_length),exc_info=True)
+            self.dlog.logger.error("do_recognize.error.({0}, {1}, {2})".format(filepath, start_time, rec_length),
+                                   exc_info=True)
         return filepath, current_time, None
 
     def recognize_file(self, filepath, start_time, stop_time, step, rec_length, with_duration=0):
@@ -201,25 +233,32 @@ class ACRCloud_Scan_Files:
         for i in range(start_time, stop_time, step):
             filep, current_time, res_data = self.do_recognize(filepath, i, rec_length)
             try:
+                print(res_data)
                 jsoninfo = json.loads(res_data)
                 code = jsoninfo['status']['code']
                 msg = jsoninfo['status']['msg']
-                if "status" in jsoninfo  and jsoninfo["status"]["code"] ==0 :
-                    result.append({"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep})
+                if "status" in jsoninfo and jsoninfo["status"]["code"] == 0:
+                    result.append(
+                        {"timestamp": current_time, "rec_length": rec_length, "result": jsoninfo, "file": filep})
                     res = self.parse_data(jsoninfo)
-                    #self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
-                    self.dlog.logger.info('recognize_file.(time:{0}, title: {1}, custom title: {2})'.format(current_time, res[0], res[-2]))
+                    # self.dlog.logger.info('recognize_file.(time:{0}, title: {1})'.format(current_time, res[0]))
+                    self.dlog.logger.info(
+                        'recognize_file.(time:{0}, title: {1}, custom title: {2})'.format(current_time, res[0],
+                                                                                          res[-2]))
                 if code == 2005:
                     self.dlog.logger.warning('recognize_file.(time:{0}, code:{1}, Done!)'.format(current_time, code))
                     break
                 elif code == 1001:
-                    result.append({"timestamp":current_time, "rec_length":rec_length, "result":jsoninfo, "file":filep})
+                    result.append(
+                        {"timestamp": current_time, "rec_length": rec_length, "result": jsoninfo, "file": filep})
                     self.dlog.logger.info("recognize_file.(time:{0}, code:{1}, No_Result)".format(current_time, code))
                 elif code == 3001:
-                    self.dlog.logger.error('recognize_file.(time:{0}, code:{1}, Missing/Invalid Access Key)'.format(current_time, code))
+                    self.dlog.logger.error(
+                        'recognize_file.(time:{0}, code:{1}, Missing/Invalid Access Key)'.format(current_time, code))
                     break
                 elif code == 3003:
-                    self.dlog.logger.error('recognize_file.(time:{0}, code:{1}, Limit exceeded)'.format(current_time, code))
+                    self.dlog.logger.error(
+                        'recognize_file.(time:{0}, code:{1}, Limit exceeded)'.format(current_time, code))
                 elif code == 3000:
                     self.dlog.logger.error('recognize_file.(time:{0}, {1}, {2})'.format(current_time, code, msg))
                     self.write_error(filepath, i, 'NETWORK ERROR')
@@ -228,7 +267,6 @@ class ACRCloud_Scan_Files:
                 self.dlog.logger.error('recognize_file.error', exc_info=True)
                 self.write_error(filepath, i, 'JSON ERROR')
         return result
-
 
     def scan_file_main(self, option, start_time, stop_time):
         try:
@@ -241,21 +279,26 @@ class ACRCloud_Scan_Files:
                 try:
                     os.makedirs(out_dir)
                 except Exception as e:
-                    self.dlog.logger.error("scan_file_main.create_out_dir_error:{0}, please check it!".format(out_dir), exc_info=True)
+                    self.dlog.logger.error("scan_file_main.create_out_dir_error:{0}, please check it!".format(out_dir),
+                                           exc_info=True)
                     return
 
             file_type = option.file_type
             if start_time == 0 and stop_time == 0:
-                file_total_seconds =  int(ACRCloudRecognizer.get_duration_ms_by_file(filepath)/1000)
+                file_total_seconds = int(ACRCloudRecognizer.get_duration_ms_by_file(filepath) / 1000)
                 results = self.recognize_file(filepath, start_time, file_total_seconds, step, rec_length, with_duration)
             else:
                 results = self.recognize_file(filepath, start_time, stop_time, step, rec_length, with_duration)
 
             filename_csv = 'result-' + os.path.basename(filepath.strip()) + '.csv'
             filename_xlsx = 'result-' + os.path.basename(filepath.strip()) + '.xlsx'
+            filename_json = 'result-' + os.path.basename(filepath.strip()) + '.json'
+
             if results:
                 if file_type == "csv":
                     self.export_to_csv(results, filename_csv, out_dir)
+                elif file_type == "json":
+                    self.export_to_json(results, filename_json, out_dir)
                 else:
                     self.export_to_xlsx(results, filename_xlsx, out_dir)
 
@@ -263,16 +306,21 @@ class ACRCloud_Scan_Files:
                 new_results = []
                 if results:
                     new_results = self.apply_filter(results)
-                filename_with_duration_csv =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
-                filename_with_duration_xlsx =  'result-' + os.path.basename(filepath.strip()) + '_with_duration.xlsx'
+
+                filename_with_duration_csv = 'result-' + os.path.basename(filepath.strip()) + '_with_duration.csv'
+                filename_with_duration_xlsx = 'result-' + os.path.basename(filepath.strip()) + '_with_duration.xlsx'
+                filename_with_duration_json = 'result-' + os.path.basename(filepath.strip()) + '_with_duration.json'
+
                 if file_type == "csv":
                     self.export_to_csv(new_results, filename_with_duration_csv, out_dir)
+                elif file_type == "json":
+
+                    self.export_to_json(new_results, filename_with_duration_json, out_dir)
                 else:
                     self.export_to_xlsx(new_results, filename_with_duration_xlsx, out_dir)
         except Exception as e:
             self.dlog.logger.error("scan_file_main.error", exc_info=True)
         return
-
 
     def scan_folder_main(self, option, start_time, stop_time):
         try:
