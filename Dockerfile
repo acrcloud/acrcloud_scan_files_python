@@ -12,7 +12,7 @@ RUN apt-get update \
 && rm -rf /var/lib/apt/lists/*
 
 RUN pip install git+https://github.com/acrcloud/acrcloud_sdk_python
-RUN pip install fuzzywuzzy requests openpyxl python-dateutil backports.csv
+RUN pip install fuzzywuzzy requests openpyxl python-dateutil backports.csv python-Levenshtein
 
 
 ENTRYPOINT ["acrcloud_scan_files_python.py"]
