@@ -25,7 +25,24 @@
  
  * [How to detect custom audio content by sound](https://www.acrcloud.com/docs/tutorials/identify-audio-custom-content/)
  
-
+## Run as a Docker Container
+- Open the Terminal and input `wget -qO- https://get.docker.com/ | sh`
+- Change the config file (config.json).
+- Run following command 
+  ```
+  git clone https://github.com/acrcloud/acrcloud_scan_files_python.git
+  cd acrcloud_scan_files_python
+  
+  docker build -t acrcloud/python_scan_tool .
+  # Call it without arguments to display the full help
+  docker run --rm acrcloud/python_scan_tool
+  # Basic usage
+  
+  docker run --rm -v $(pwd):/tmp -v /Users/acrcloud/:/music/ acrcloud/python_scan_tool -f /music/test.mp4 -o /tmp
+  
+  You need to change /Users/acrcloud/ to the directory where your audio/video file is.
+  And the report file will in the acrcloud_scan_files_python directory.
+  ```
 ## Installation 
  
  For Windows System, you must install [Python](https://www.python.org/downloads/windows/) and [pip](https://pip.pypa.io/en/stable/installing/).
