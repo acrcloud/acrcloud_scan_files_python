@@ -34,14 +34,15 @@
 - Run following command 
   ```
   git clone https://github.com/acrcloud/acrcloud_scan_files_python.git
+  
   cd acrcloud_scan_files_python
   
-  docker build -t acrcloud/python_scan_tool .
+  sudo docker build -t acrcloud/python_scan_tool .
   # Call it without arguments to display the full help
-  docker run --rm acrcloud/python_scan_tool
-  # Basic usage
+  sudo docker run --rm acrcloud/python_scan_tool
   
-  docker run --rm -v $(pwd):/tmp -v /Users/acrcloud/:/music/ acrcloud/python_scan_tool -f /music/test.mp4 -o /tmp
+  # Basic usage
+  sudo docker run --rm -v $(pwd):/tmp -v /Users/acrcloud/:/music/ acrcloud/python_scan_tool -f /music/test.mp4 -o /tmp
   
   You need to change /Users/acrcloud/ to the directory where your audio/video file is.
   And the report file will in the acrcloud_scan_files_python directory.
