@@ -26,7 +26,9 @@
  * [How to detect custom audio content by sound](https://www.acrcloud.com/docs/tutorials/identify-audio-custom-content/)
  
 ## Run as a Docker Container
-- Open the Terminal and input `bash <(curl -s https://get.docker.com/)`
+- Install Docker 
+  - If you are using Windows or MacOS: vistr https://www.docker.com/products/docker-desktop and download docker-desktop to install docker.
+  - If you are using Linux: Open the Terminal and input `bash <(curl -s https://get.docker.com/)`
 - Change the config file (config.json).
 - Run following command 
   ```
