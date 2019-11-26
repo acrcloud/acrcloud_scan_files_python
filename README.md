@@ -14,7 +14,9 @@
 
 ## Requirements
 
-- Python 2.x or 3.x
+**Notice: This tool only support Python 2.**
+
+- Python 2.x
 - fuzzywuzzy
 - openpyxl
 - backports.csv
