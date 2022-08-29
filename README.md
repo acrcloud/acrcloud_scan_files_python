@@ -22,10 +22,7 @@
 - backports.csv
 - requests
 - Follow one of the tutorials to create a project and get your host, access_key and access_secret.
-
- * [How to identify songs by sound](https://www.acrcloud.com/docs/tutorials/identify-music-by-sound/)
  
- * [How to detect custom audio content by sound](https://www.acrcloud.com/docs/tutorials/identify-audio-custom-content/)
  
 ## Run as a Docker Container
 - Install Docker 
